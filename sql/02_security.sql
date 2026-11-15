@@ -146,10 +146,14 @@ do $$ declare r record; begin
 end $$;
 
 create policy sides_read   on public.sides for select to anon, authenticated using (true);
-create policy sides_admin  on public.sides for all to authenticated using (private.is_admin()) with check (private.is_admin());
+create policy sides_add    on public.sides for insert to authenticated with check (private.is_admin());
+create policy sides_edit   on public.sides for update to authenticated using (private.is_admin()) with check (private.is_admin());
+create policy sides_remove on public.sides for delete to authenticated using (private.is_admin());
 
 create policy hh_read      on public.households for select to authenticated using (true);
-create policy hh_admin     on public.households for all to authenticated using (private.is_admin()) with check (private.is_admin());
+create policy hh_add       on public.households for insert to authenticated with check (private.is_admin());
+create policy hh_edit      on public.households for update to authenticated using (private.is_admin()) with check (private.is_admin());
+create policy hh_remove    on public.households for delete to authenticated using (private.is_admin());
 
 create policy people_read   on public.people for select to authenticated using (true);
 create policy people_add    on public.people for insert to authenticated with check (private.is_admin());
@@ -157,7 +161,9 @@ create policy people_edit   on public.people for update to authenticated using (
 create policy people_remove on public.people for delete to authenticated using (private.is_admin());
 
 create policy ps_read      on public.person_sides for select to authenticated using (true);
-create policy ps_admin     on public.person_sides for all to authenticated using (private.is_admin()) with check (private.is_admin());
+create policy ps_add       on public.person_sides for insert to authenticated with check (private.is_admin());
+create policy ps_edit      on public.person_sides for update to authenticated using (private.is_admin()) with check (private.is_admin());
+create policy ps_remove    on public.person_sides for delete to authenticated using (private.is_admin());
 
 create policy wl_read      on public.wishlist_items for select to authenticated using (true);
 create policy wl_add       on public.wishlist_items for insert to authenticated with check (private.can_manage(person_id));
