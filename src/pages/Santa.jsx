@@ -70,7 +70,7 @@ export default function Santa({ go }) {
             </div>
           ))}
 
-          {drawn && !mine && <Empty title="You’re not in this year’s draw">Ask the admin to check you’re on this family.</Empty>}
+          {drawn && !mine && <Empty title="Nothing recorded for you this year">If this year’s draw happened outside the app, that’s expected. The app draws automatically from 1 November next year.</Empty>}
           {!drawn && (
             <div className="card pad" style={{ textAlign: 'center' }}>
               <p style={{ fontSize: '3rem' }} aria-hidden="true">🎅</p>
