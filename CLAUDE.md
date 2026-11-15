@@ -9,7 +9,7 @@ These Supabase projects belong to other live tools. Never modify, pause, reset, 
 This app's database is its own project in a **separate Supabase account/org** (`dmn_trivia`). The Supabase tools connected to Claude may only see the main account, so they cannot reach it: write SQL into `sql/` and the owner runs it in the Supabase SQL Editor.
 
 ## Privacy
-This repo is **public**. Never commit family names, emails, birthdays, passwords or keys. Real seed data lives in `sql/*.private.sql` (gitignored). The publishable key in `src/config.js` is public by design; the `service_role` key must only ever live in GitHub Actions secrets.
+This repo is **public**. Never commit family names, emails, birthdays, passwords or keys. Real seed data lives in `sql/*.private.sql` (gitignored). The publishable key in `src/config.js` is public by design; the Supabase **secret** key (formerly `service_role`) must only ever live in GitHub Actions secrets.
 
 ## Stack / conventions
 - Vite + React 19, `motion` for animation, `@supabase/supabase-js`. No other runtime deps without a reason.

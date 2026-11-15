@@ -37,7 +37,7 @@ The **Daily job** workflow (6am Brisbane) needs three secrets. GitHub repo → *
 
 | Name | Value |
 |---|---|
-| `SUPABASE_SERVICE_KEY` | Supabase → Project Settings → API Keys → the **service_role** (secret) key. Never share it or put it in code. |
+| `SUPABASE_SECRET_KEY` | Supabase → Project Settings → API Keys → the **secret** key (`sb_secret_…`; older projects call it `service_role`). Never share it or put it in code. `SUPABASE_SERVICE_KEY` also works as the name. |
 | `GMAIL_USER` | The sender Gmail address |
 | `GMAIL_APP_PASSWORD` | The 16-letter App Password for that Gmail (Google Account → Security → 2-Step Verification → App passwords) |
 

@@ -62,8 +62,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const { createMailer } = await import('./mailer.mjs');
   const { SUPABASE_URL } = await import('../src/config.js');
   const dry = process.env.DRY_RUN === 'true';
-  const key = process.env.SUPABASE_SERVICE_KEY;
-  if (!key) { console.error('SUPABASE_SERVICE_KEY is not set (GitHub repo → Settings → Secrets and variables → Actions).'); process.exit(1); }
+  // Supabase's new "secret" API key is the replacement for the old service_role key; either name works.
+  const key = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_KEY;
+  if (!key) { console.error('No Supabase secret key found. Add it as a repository secret named SUPABASE_SECRET_KEY (GitHub repo → Settings → Secrets and variables → Actions).'); process.exit(1); }
   const siteUrl = (process.env.SITE_URL || '').replace(/\/$/, '');
   if (!siteUrl) { console.error('SITE_URL is not set.'); process.exit(1); }
   await run({ store: createStore(SUPABASE_URL, key, { dry }), mailer: createMailer({ dry }), siteUrl });
