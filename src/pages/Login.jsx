@@ -45,7 +45,7 @@ export default function Login() {
         {sideRow?.welcome && <p className="small" style={{ marginTop: 2 }}>{sideRow.welcome}</p>}
       </div>
 
-      {error && <p className="error" style={{ textAlign: 'center', marginTop: 16 }}>{error}</p>}
+      {error && <p className="error" role="alert" style={{ textAlign: 'center', marginTop: 16 }}>{error}</p>}
 
       <AnimatePresence mode="wait" initial={false}>
         {side && !who && (

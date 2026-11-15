@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { Avatar, Empty, Spinner, IconBack, IconPlus } from '../ui.jsx';
+import { Avatar, Empty, Spinner, IconBack, IconPlus, IconEye } from '../ui.jsx';
+import { goBack } from '../lib/router.js';
 import ItemSheet from '../sheets/ItemSheet.jsx';
 import ClaimSheet from '../sheets/ClaimSheet.jsx';
 import PersonSheet from '../sheets/PersonSheet.jsx';
@@ -11,7 +12,8 @@ import { todayISO, nextBirthday, fmtBirthday, fmtDay, inDays, firstName } from '
 const money = (n) => (n == null ? null : new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: n % 1 ? 2 : 0 }).format(n));
 const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return u; } };
 
-export default function Person({ id, go }) {
+/** root: shown as a tab (My list), so there is nothing to go back to. */
+export default function Person({ id, root = false }) {
   const { me, byId, fam, mySides, toast } = useApp();
   const person = byId[id];
   const isOwn = me.id === id;
@@ -45,21 +47,26 @@ export default function Person({ id, go }) {
 
   return (
     <main className={`shell ${editable || showClaims ? 'has-fab' : ''}`}>
-      <div className="row" style={{ marginBottom: 8 }}>
-        <button className="icon-btn" onClick={() => go('/')} aria-label="Back"><IconBack size={20} /></button>
-        {editable && !isOwn && <button className="btn gray small" style={{ marginLeft: 'auto' }} onClick={() => setProfile(true)}>Edit profile</button>}
-      </div>
+      {(!root || (editable && !isOwn)) && (
+        <div className="row" style={{ marginBottom: 8 }}>
+          {!root && <button className="icon-btn" onClick={() => goBack('/')} aria-label="Back"><IconBack size={20} /></button>}
+          {editable && !isOwn && <button className="btn gray small" style={{ marginLeft: 'auto' }} onClick={() => setProfile(true)}>Edit profile</button>}
+        </div>
+      )}
 
       <div className="row" style={{ gap: 16, margin: '8px 0 16px' }}>
         <Avatar person={person} size={72} />
         <div className="grow">
           <h1>{isOwn ? 'My list' : firstName(person)}</h1>
           <p className="muted" style={{ marginTop: 4 }}>
-            {bd ? <>Birthday {fmtBirthday(person)}{bd.turning ? ` · turning ${bd.turning}` : ''}</> : 'No birthday saved yet'}
+            {bd ? <>
+              <span className="nowrap">Birthday {fmtBirthday(person)}</span>
+              {bd.days <= 60 && <> · <span className={`nowrap ${bd.days <= 42 ? 'when-soon' : ''}`}>{bd.days === 0 ? 'today!' : bd.days === 1 ? 'tomorrow' : `in ${bd.days} days`}</span></>}
+              {bd.turning ? <> · <span className="nowrap">turning {bd.turning}</span></> : ''}
+            </> : 'No birthday saved yet'}
           </p>
         </div>
       </div>
-      {bd && bd.days <= 60 && <p style={{ marginBottom: 16 }}><span className={`pill ${bd.days <= 42 ? 'accent' : ''}`}>🎂 {bd.days === 0 ? 'Birthday today!' : `Birthday ${bd.days === 1 ? 'tomorrow' : `in ${bd.days} days`}`}</span></p>}
       {isOwn && <p className="muted small" style={{ marginBottom: 16 }}>Everyone in the family can see this list. You never see what has been bought for you.</p>}
 
       {details.length > 0 && (
@@ -74,7 +81,7 @@ export default function Person({ id, go }) {
       {showClaims && (
         <div className="seg" style={{ marginBottom: 16 }}>
           <button aria-pressed={tab === 'list'} onClick={() => setTab('list')}>Wishlist</button>
-          <button aria-pressed={tab === 'bought'} onClick={() => setTab('bought')}>Bought{offList.length ? ` · ${offList.length}` : ''}</button>
+          <button aria-pressed={tab === 'bought'} onClick={() => setTab('bought')}>Other gifts{offList.length ? ` · ${offList.length}` : ''}</button>
         </div>
       )}
 
@@ -82,7 +89,7 @@ export default function Person({ id, go }) {
         <div className="stack">
           {items.length === 0 && (
             <Empty title={isOwn ? 'Nothing here yet' : `${firstName(person)} has not added ideas yet`}>
-              {isOwn ? 'Tap “Add idea” any time you spot something. Links, photos or just a note.' : 'Check back soon — or buy something and log it under “Bought”.'}
+              {isOwn ? 'Tap “Add idea” any time you spot something. Links, photos or just a note.' : 'Check back soon, or log a gift you’re getting under “Other gifts”.'}
             </Empty>
           )}
           {items.map((it) => (
@@ -113,7 +120,7 @@ export default function Person({ id, go }) {
         <motion.button className="btn fab" whileTap={{ scale: 0.95 }} onClick={() => setItemSheet({ open: true, item: null })}><IconPlus size={22} /> Add idea</motion.button>
       )}
       {tab === 'bought' && showClaims && (
-        <motion.button className="btn fab" whileTap={{ scale: 0.95 }} onClick={() => setClaimSheet({ open: true, item: null, claim: null })}><IconPlus size={22} /> I bought something</motion.button>
+        <motion.button className="btn fab" whileTap={{ scale: 0.95 }} onClick={() => setClaimSheet({ open: true, item: null, claim: null })}><IconPlus size={22} /> Add another gift</motion.button>
       )}
 
       <ItemSheet open={itemSheet.open} onClose={() => setItemSheet((s) => ({ ...s, open: false }))} owner={person} item={itemSheet.item} onSaved={refresh} />
@@ -135,11 +142,11 @@ function Item({ it, claims, showClaims, editable, meId, byId, sharesSide, onEdit
   return (
     <motion.div layout="position" className={`item ${takenByOther ? 'taken' : ''} ${mine && !takenByOther ? 'mine' : ''}`}>
       <div className="item-main">
-        <span className="thumb">{it.image_url ? <img src={it.image_url} alt="" loading="lazy" /> : <span aria-hidden="true">🎁</span>}</span>
+        {it.image_url && <span className="thumb"><img src={it.image_url} alt="" loading="lazy" /></span>}
         <div className="grow">
           <p className="item-title">{it.title}</p>
           <div className="item-meta">
-            {it.priority > 0 && <span className="stars" aria-label={it.priority === 2 ? 'Really want' : 'Would love'}>{'★'.repeat(it.priority + 1)}</span>}
+            {it.priority > 0 && <span className="prio">{it.priority === 2 ? 'Really want' : 'Would love'}</span>}
             {it.price != null && <span className="tnum">{money(Number(it.price))}</span>}
             {it.url && <a href={it.url} target="_blank" rel="noopener noreferrer">{host(it.url)} ↗</a>}
           </div>
@@ -150,28 +157,26 @@ function Item({ it, claims, showClaims, editable, meId, byId, sharesSide, onEdit
       <div className="item-foot">
         {takenByOther && (
           <>
-            <span className="pill ok">Bought</span>
-            <button className="reveal" aria-pressed={shown} onClick={() => setShown((s) => !s)} aria-label="Reveal who bought it">
-              <span className="blur">{who(bought)}</span>{!shown && ' 👀'}
-            </button>
+            <span className="pill ok">Taken</span>
+            <Reveal shown={shown} onToggle={() => setShown((s) => !s)} name={who(bought)} />
             {shown && claimer?.email && sharesSide(claimer.id) && <a className="small" href={`mailto:${claimer.email}?subject=${encodeURIComponent('About the gift for ' + it.title)}`}>Message</a>}
           </>
         )}
         {showClaims && !takenByOther && mine && (
           <>
-            <span className={`pill ${mine.state === 'bought' ? 'ok' : 'warn'}`}>{mine.state === 'bought' ? 'You bought this ✓' : 'You’re thinking about it'}</span>
+            <span className={`pill ${mine.state === 'bought' ? 'ok' : 'warn'}`}>{mine.state === 'bought' ? 'You’re getting this' : 'You said maybe'}</span>
             <button className="btn small gray" onClick={() => onClaim(mine)}>Change</button>
           </>
         )}
         {showClaims && !takenByOther && !mine && (
           <>
-            <button className="btn small" onClick={() => onClaim(null)}>I’ll get this</button>
+            <button className="btn small soft" onClick={() => onClaim(null)}>I’ll get this</button>
             {thinking.length > 0 && <ThinkingPill thinking={thinking} who={who} />}
           </>
         )}
         {showClaims && !takenByOther && mine && thinking.filter((c) => c.claimer_id !== meId).length > 0 && <ThinkingPill thinking={thinking.filter((c) => c.claimer_id !== meId)} who={who} />}
         {editable && <button className="btn small plain" style={{ marginLeft: 'auto' }} onClick={onEdit}>Edit</button>}
-        {editable && !showClaims && <button className="btn small gray" onClick={onGot}>Got it ✓</button>}
+        {editable && !showClaims && <button className="btn small gray" onClick={onGot}>Received</button>}
       </div>
     </motion.div>
   );
@@ -179,9 +184,16 @@ function Item({ it, claims, showClaims, editable, meId, byId, sharesSide, onEdit
 
 function ThinkingPill({ thinking, who }) {
   const [shown, setShown] = useState(false);
+  return <Reveal shown={shown} onToggle={() => setShown((s) => !s)} name={thinking.map(who).join(', ')} prefix={`${thinking.length} said maybe`} />;
+}
+
+/** Blurred name until tapped, so a glimpse over someone's shoulder spoils nothing. Screen readers get the name only once shown. */
+function Reveal({ shown, onToggle, name, prefix }) {
   return (
-    <button className="reveal" aria-pressed={shown} onClick={() => setShown((s) => !s)}>
-      {thinking.length} thinking · <span className="blur">{thinking.map(who).join(', ')}</span>
+    <button className="reveal" aria-pressed={shown} onClick={onToggle}>
+      {prefix && <span>{prefix}:</span>}
+      <span className="blur" aria-hidden={!shown}>{name}</span>
+      {!shown && <><IconEye size={15} /><span className="sr">Show who</span></>}
     </button>
   );
 }
@@ -190,8 +202,8 @@ function BoughtTab({ offList, past, byId, sharesSide, meId, onEdit }) {
   const who = (c) => (c.claimer_id === meId ? 'You' : sharesSide(c.claimer_id) ? firstName(byId[c.claimer_id]) : 'Someone on the other side');
   return (
     <div className="stack">
-      <p className="muted small">Gifts bought that are not from the list, so nobody doubles up. Tap “Reveal” to see who.</p>
-      {offList.length === 0 && <Empty title="Nothing logged">Bought something not on the list? Add it here.</Empty>}
+      <p className="muted small">Gifts people are getting that aren’t on the list, so nobody doubles up. Tap a blurred name to see who.</p>
+      {offList.length === 0 && <Empty title="Nothing logged">Getting something that isn’t on the list? Add it here.</Empty>}
       {offList.map((c) => <OffRow key={c.id} c={c} who={who(c)} mine={c.claimer_id === meId} onEdit={() => onEdit(c)} />)}
       {past.length > 0 && <p className="section-title" style={{ marginTop: 20 }}>Past gifts</p>}
       {past.length > 0 && (
@@ -208,12 +220,12 @@ function BoughtTab({ offList, past, byId, sharesSide, meId, onEdit }) {
 function OffRow({ c, who, mine, onEdit }) {
   const [shown, setShown] = useState(mine);
   return (
-    <div className="item"><div className="item-main"><span className="thumb" aria-hidden="true">🛍️</span>
+    <div className="item"><div className="item-main">
       <div className="grow"><p className="item-title">{c.description}</p>
-        <div className="item-meta"><span className={`pill ${c.state === 'bought' ? 'ok' : 'warn'}`}>{c.state === 'bought' ? 'Bought' : 'Thinking'}</span>
+        <div className="item-meta"><span className={`pill ${c.state === 'bought' ? 'ok' : 'warn'}`}>{c.state === 'bought' ? 'Getting it' : 'Maybe'}</span>
           <span>{c.occasion_type === 'birthday' ? 'Birthday' : 'Christmas'} · {fmtDay(c.occasion_date)}</span></div></div></div>
       <div className="item-foot">
-        <button className="reveal" aria-pressed={shown} onClick={() => setShown((s) => !s)}><span className="blur">{who}</span>{!shown && ' 👀'}</button>
+        <Reveal shown={shown} onToggle={() => setShown((s) => !s)} name={who} />
         {mine && <button className="btn small plain" style={{ marginLeft: 'auto' }} onClick={onEdit}>Change</button>}
       </div>
     </div>

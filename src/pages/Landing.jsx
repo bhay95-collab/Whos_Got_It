@@ -21,7 +21,7 @@ export default function Landing({ sides, error }) {
         <h1>Who’s Got It?</h1>
         <p>Choose your family</p>
       </div>
-      {error && <p className="error" style={{ textAlign: 'center', marginTop: 16 }}>{error}</p>}
+      {error && <p className="error" role="alert" style={{ textAlign: 'center', marginTop: 16 }}>{error}</p>}
       {!sides ? <Spinner /> : (
         <div className="stack" style={{ marginTop: 28 }}>
           {sides.map((s, i) => {

@@ -28,30 +28,39 @@ export const IconBack = I(<path d="m15 5-7 7 7 7" />);
 export const IconLink = I(<><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" /><path d="M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1" /></>);
 export const IconCamera = I(<><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7H8l1.2-2h5.6L16 7h2.5A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5Z" /><circle cx="12" cy="13" r="3.4" /></>);
 export const IconX = I(<path d="M6 6l12 12M18 6 6 18" />);
+export const IconEye = I(<><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" /><circle cx="12" cy="12" r="2.8" /></>);
 
 /* ---------- bottom sheet: spring in/out, drag the handle to dismiss with velocity handoff ---------- */
 export function Sheet({ open, onClose, title, children, action }) {
   const controls = useDragControls();
+  const box = useRef(null);
   useEffect(() => {
     if (!open) return;
     const k = (e) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', k);
     return () => window.removeEventListener('keydown', k);
   }, [open, onClose]);
+  // Move focus into the sheet when it opens, and hand it back to whatever opened it when it closes.
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.activeElement;
+    const t = requestAnimationFrame(() => box.current?.focus({ preventScroll: true }));
+    return () => { cancelAnimationFrame(t); prev?.focus?.({ preventScroll: true }); };
+  }, [open]);
   return createPortal(
     <AnimatePresence>
       {open && (
         <>
           <motion.div key="scrim" className="scrim" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }} onClick={onClose} />
           <motion.div
-            key="sheet" className="sheet" role="dialog" aria-modal="true" aria-label={title}
+            key="sheet" ref={box} tabIndex={-1} className="sheet" role="dialog" aria-modal="true" aria-label={title}
             initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={SPRING}
             drag="y" dragListener={false} dragControls={controls}
             dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: 0.04, bottom: 0.7 }}
             onDragEnd={(_, info) => { if (info.offset.y > 110 || info.velocity.y > 700) onClose(); }}
           >
             <div className="sheet-grab" onPointerDown={(e) => controls.start(e)}><i /></div>
-            <div className="sheet-head">
+            <div className="sheet-head" onPointerDown={(e) => { if (!e.target.closest('button, a, input')) controls.start(e); }}>
               <h2>{title}</h2>
               {action || <button className="icon-btn" onClick={onClose} aria-label="Close"><IconX size={20} /></button>}
             </div>
@@ -101,7 +110,7 @@ export function PinPad({ onComplete }) {
     if (pin.length !== 4 || busy) return;
     setBusy(true); setErr('');
     Promise.resolve(cb.current(pin))
-      .catch((e) => { setErr(e.message); setShake((s) => s + 1); navigator.vibrate?.(60); })
+      .catch((e) => { setErr(e.message); if (e.message) { setShake((s) => s + 1); navigator.vibrate?.(60); } })
       .finally(() => { setBusy(false); setPin(''); });
   }, [pin, busy]);
 
@@ -110,7 +119,7 @@ export function PinPad({ onComplete }) {
       <motion.div className="dots" key={shake} animate={shake ? { x: [0, -10, 10, -7, 7, 0] } : {}} transition={{ duration: 0.38 }} role="img" aria-label={`${pin.length} of 4 digits entered`}>
         {[0, 1, 2, 3].map((i) => <span key={i} className={`dot ${i < pin.length ? 'on' : ''}`} />)}
       </motion.div>
-      <p className="error" style={{ textAlign: 'center', minHeight: '1.4em' }}>{err}</p>
+      <p className="error" role="alert" style={{ textAlign: 'center', minHeight: '1.4em' }}>{err}</p>
       <div className="keys">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => <button key={n} className="key" onClick={() => press(String(n))} disabled={busy}>{n}</button>)}
         <span />

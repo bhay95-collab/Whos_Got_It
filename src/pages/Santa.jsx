@@ -38,7 +38,7 @@ export default function Santa({ go }) {
   return (
     <main className="shell">
       <div className="page-head"><div><h1>Secret Santa</h1><p className="sub">{sideName} · $100 each</p></div></div>
-      {err && <p className="error">{err}</p>}
+      {err && <p className="error" role="alert">{err}</p>}
       {!pairs ? <Spinner /> : (
         <>
           {drawn && mine && (
@@ -48,13 +48,13 @@ export default function Santa({ go }) {
                   <motion.div key="closed" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.08, rotate: 4 }} transition={{ type: 'spring', bounce: 0.3, duration: 0.5 }}>
                     <div style={{ fontSize: '3.5rem' }} aria-hidden="true">🎁</div>
                     <p className="big" style={{ marginTop: 8 }}>Tap to unwrap</p>
-                    <p style={{ opacity: 0.8, marginTop: 6 }}>Your Secret Santa person for {year}</p>
+                    <p style={{ marginTop: 6 }}>Your Secret Santa person for {year}</p>
                   </motion.div>
                 ) : (
                   <motion.div key="open" initial={{ opacity: 0, scale: 0.7, rotate: -6 }} animate={{ opacity: 1, scale: 1, rotate: 0 }} transition={{ type: 'spring', bounce: 0.4, duration: 0.6 }}>
                     <div style={{ display: 'grid', placeItems: 'center' }}><Avatar person={byId[mine.recipient_id]} size={72} /></div>
                     <p className="big" style={{ marginTop: 12 }}>{byId[mine.recipient_id]?.full_name}</p>
-                    <p style={{ opacity: 0.85, marginTop: 6 }}>Budget $100 · shh, it’s a secret 🤫</p>
+                    <p style={{ marginTop: 6 }}>Budget $100 · shh, it’s a secret 🤫</p>
                   </motion.div>
                 )}
               </AnimatePresence>

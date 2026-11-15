@@ -41,7 +41,9 @@ export default function ItemSheet({ open, onClose, owner, item, onSaved }) {
   };
 
   const save = async () => {
-    const title = f.title.trim() || (f.url ? new URL(withProto(f.url)).hostname.replace(/^www\./, '') : '');
+    let site = '';
+    try { site = f.url.trim() ? new URL(withProto(f.url)).hostname.replace(/^www\./, '') : ''; } catch { /* not a real link */ }
+    const title = f.title.trim() || site || (f.image_url ? 'Photo idea' : '');
     if (!title) { setErr('Give it a name, a link or a photo.'); return; }
     setBusy(true); setErr('');
     try {
@@ -106,7 +108,7 @@ export default function ItemSheet({ open, onClose, owner, item, onSaved }) {
         </div>
       </Field>
 
-      {err && <p className="error">{err}</p>}
+      {err && <p className="error" role="alert">{err}</p>}
       <button className="btn block" onClick={save} disabled={busy}>{busy ? 'Saving…' : item ? 'Save' : 'Add to list'}</button>
       {item && <button className="btn danger block" onClick={remove} disabled={busy}>Remove idea</button>}
     </Sheet>
