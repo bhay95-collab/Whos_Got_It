@@ -1,11 +1,14 @@
 import { useState } from 'react';
+import { renameSide } from '../lib/api.js';
 import { Avatar, IconPlus } from '../ui.jsx';
 import PersonSheet from '../sheets/PersonSheet.jsx';
 import { useApp } from '../lib/ctx.jsx';
 import { fmtBirthday } from '../lib/dates.js';
 
 export default function Admin() {
-  const { fam, reload } = useApp();
+  const { fam, reload, toast } = useApp();
+  const [names, setNames] = useState({});
+  const saveName = async (id) => { try { await renameSide(id, names[id].trim()); toast('Name saved'); setNames((n) => { const c = { ...n }; delete c[id]; return c; }); reload(); } catch (e) { toast(e.message); } };
   const [sheet, setSheet] = useState({ open: false, person: null });
   const sideNames = (id) => fam.personSides.filter((s) => s.person_id === id).map((s) => fam.sides.find((x) => x.id === s.side_id)?.name).filter(Boolean).join(' · ');
   const hh = (id) => fam.households.find((h) => h.id === id)?.name;
@@ -30,6 +33,16 @@ export default function Admin() {
             </span>
           </button>
         ))}
+      </div>
+      <p className="section-title">Family names</p>
+      <div className="card pad stack">
+        {fam.sides.map((sd) => (
+          <div key={sd.id} className="row" style={{ gap: 8 }}>
+            <input className="input" aria-label={`Name for family ${sd.id}`} value={names[sd.id] ?? sd.name} onChange={(e) => setNames((n) => ({ ...n, [sd.id]: e.target.value }))} />
+            <button className="btn small" disabled={names[sd.id] === undefined || !names[sd.id].trim()} onClick={() => saveName(sd.id)}>Save</button>
+          </div>
+        ))}
+        <p className="small muted">Shown on the home screen and sign-in page, e.g. “Hay, Orr &amp; McVeigh”.</p>
       </div>
       <PersonSheet open={sheet.open} onClose={() => setSheet((s) => ({ ...s, open: false }))} person={sheet.person} mode="admin" onSaved={reload} />
     </main>

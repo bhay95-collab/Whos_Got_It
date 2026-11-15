@@ -286,3 +286,12 @@ table.matrix { border-collapse: separate; border-spacing: 3px; font-size: 0.75re
 /* ---------- motion preferences ---------- */
 @media (prefers-reduced-transparency: reduce) { .tabbar { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; } }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } .btn, .tab, .face, .person-tile, .bday { transition: none !important; } }
+
+/* ---------- landing ---------- */
+.family-card { display: flex; align-items: center; gap: 16px; padding: 18px; background: var(--surface); border-radius: 22px; box-shadow: var(--shadow-sm); color: var(--text); text-decoration: none; transition: transform 120ms var(--ease); }
+.family-card:active { transform: scale(0.98); }
+.family-card b { font-size: 1.1875rem; letter-spacing: -0.02em; font-weight: 650; }
+.faces { display: flex; flex: none; }
+.faces .avatar { margin-left: -9px; border: 2.5px solid var(--surface); }
+.faces .avatar:first-child { margin-left: 0; }
+@media (hover: hover) and (pointer: fine) { .family-card:hover { box-shadow: var(--shadow-md); } }

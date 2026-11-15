@@ -11,7 +11,9 @@ export function AppProvider({ children }) {
   const [auth, setAuth] = useState({ ready: false, session: null });
   const [fam, setFam] = useState(null);
   const [famError, setFamError] = useState('');
-  const [sidePick, setSidePick] = useState(() => { try { return localStorage.getItem('wgi.side') || ''; } catch { return ''; } });
+  // Explicit toggle this session (wins over the page you opened), and the last family used on the generic home page.
+  const [override, setOverride] = useState('');
+  const [stored] = useState(() => { try { return localStorage.getItem('wgi.side') || ''; } catch { return ''; } });
   const [toasts, setToasts] = useState([]);
 
   useEffect(() => {
@@ -40,13 +42,16 @@ export function AppProvider({ children }) {
   const me = useMemo(() => fam?.people.find((p) => p.auth_user_id === uid) || null, [fam, uid]);
   const mySides = useMemo(() => (me && fam ? fam.personSides.filter((s) => s.person_id === me.id).map((s) => s.side_id) : []), [me, fam]);
 
-  // which side we are looking at: the link you opened (if you belong), else your last pick, else your first side
+  // Which family we are looking at: your toggle, else the link you opened, else (generic home page) your last pick, else your first.
   const side = useMemo(() => {
-    if (!me) return ENTRY_SIDE || sidePick;
-    for (const s of [ENTRY_SIDE, sidePick]) if (s && mySides.includes(s)) return s;
+    if (!me) return ENTRY_SIDE;
+    for (const s of [override, ENTRY_SIDE, ENTRY_SIDE ? '' : stored]) if (s && mySides.includes(s)) return s;
     return mySides[0] || '';
-  }, [me, mySides, sidePick]);
-  const setSide = (s) => { setSidePick(s); try { localStorage.setItem('wgi.side', s); } catch { /* private mode */ } };
+  }, [me, mySides, override, stored]);
+  const setSide = (s) => {
+    setOverride(s);
+    if (!ENTRY_SIDE) { try { localStorage.setItem('wgi.side', s); } catch { /* private mode */ } }
+  };
 
   const sidePeople = useMemo(() => {
     if (!fam || !side) return [];

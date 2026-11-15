@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Avatar, PinPad, IconBack, Spinner } from '../ui.jsx';
+import Landing from './Landing.jsx';
 import { loadRoster, loadSides, signIn, firstSignUp } from '../lib/api.js';
-import { ENTRY_SIDE, useApp } from '../lib/ctx.jsx';
+import { ENTRY_SIDE } from '../lib/ctx.jsx';
 import { firstName } from '../lib/dates.js';
 
 const logo = `${import.meta.env.BASE_URL}icons/icon-192.png`;
 
 export default function Login() {
-  const { setSide } = useApp();
   const [sides, setSides] = useState(null);
-  const [side, setLocalSide] = useState(ENTRY_SIDE);
+  const side = ENTRY_SIDE;
   const [roster, setRoster] = useState(null);
   const [who, setWho] = useState(null);          // person tapped
   const [draft, setDraft] = useState('');        // first-time: first PIN, awaiting confirmation
@@ -23,7 +23,6 @@ export default function Login() {
     loadRoster(side).then(setRoster).catch((e) => setError(e.message));
   }, [side]);
 
-  const pickSide = (s) => { setLocalSide(s); setSide(s); };
   const back = () => { setWho(null); setDraft(''); };
 
   const verify = async (pin) => {
@@ -34,29 +33,19 @@ export default function Login() {
   };
 
   const sideName = sides?.find((s) => s.id === side)?.name;
+  if (!ENTRY_SIDE) return <Landing sides={sides} error={error} />;
 
   return (
     <main className="shell bare">
       <div className="hero">
         <img src={logo} alt="" />
         <h1>Who’s Got It?</h1>
-        <p>{sideName ? sideName : 'Family gifts, sorted.'}</p>
+        <p>{sideName || ' '}</p>
       </div>
 
       {error && <p className="error" style={{ textAlign: 'center', marginTop: 16 }}>{error}</p>}
 
       <AnimatePresence mode="wait" initial={false}>
-        {!side && (
-          <motion.div key="sides" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }}>
-            <p className="section-title" style={{ textAlign: 'center' }}>Which family?</p>
-            {!sides ? <Spinner /> : (
-              <div className="stack">
-                {sides.map((s) => <button key={s.id} className="btn gray block" onClick={() => pickSide(s.id)}>{s.name}</button>)}
-              </div>
-            )}
-          </motion.div>
-        )}
-
         {side && !who && (
           <motion.div key="roster" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }}>
             <p className="section-title" style={{ textAlign: 'center', marginTop: 28 }}>Who are you?</p>
@@ -71,7 +60,7 @@ export default function Login() {
                 ))}
               </div>
             )}
-            {!ENTRY_SIDE && <p style={{ textAlign: 'center', marginTop: 20 }}><button className="btn plain small" onClick={() => setLocalSide('')}>Other family</button></p>}
+            <p style={{ textAlign: 'center', marginTop: 20 }}><a className="btn plain small" href={import.meta.env.BASE_URL}>Not your family?</a></p>
           </motion.div>
         )}
 
