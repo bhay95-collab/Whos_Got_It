@@ -7,6 +7,14 @@ export const useApp = () => useContext(Ctx);
 
 export const ENTRY_SIDE = document.documentElement.dataset.side || '';
 
+/** Paint a family's accent colour (and remember it, so the next visit has no coral flash). */
+export function applyAccent(accent) {
+  const a = accent && accent !== 'coral' ? accent : '';
+  if (a) document.documentElement.dataset.accent = a; else delete document.documentElement.dataset.accent;
+  try { if (ENTRY_SIDE && accent) localStorage.setItem(`wgi.accent.${ENTRY_SIDE}`, accent); } catch { /* private mode */ }
+}
+try { if (ENTRY_SIDE) applyAccent(localStorage.getItem(`wgi.accent.${ENTRY_SIDE}`)); } catch { /* private mode */ }
+
 export function AppProvider({ children }) {
   const [auth, setAuth] = useState({ ready: false, session: null });
   const [fam, setFam] = useState(null);
@@ -59,7 +67,10 @@ export function AppProvider({ children }) {
     return fam.people.filter((p) => ids.has(p.id) && p.active);
   }, [fam, side]);
   const byId = useMemo(() => Object.fromEntries((fam?.people || []).map((p) => [p.id, p])), [fam]);
-  const sideName = fam?.sides.find((s) => s.id === side)?.name || '';
+  const sideRow = fam?.sides.find((s) => s.id === side);
+  const sideName = sideRow?.name || '';
+  const sideWelcome = sideRow?.welcome || '';
+  useEffect(() => { applyAccent(sideRow?.accent); }, [sideRow?.accent]);
 
   const toast = useCallback((msg) => {
     const id = Math.random();
@@ -67,7 +78,7 @@ export function AppProvider({ children }) {
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 2600);
   }, []);
 
-  const value = { auth, fam, famError, me, mySides, side, setSide, sidePeople, byId, sideName, reload, toast, toasts };
+  const value = { auth, fam, famError, me, mySides, side, setSide, sidePeople, byId, sideName, sideWelcome, reload, toast, toasts };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

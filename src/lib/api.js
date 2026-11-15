@@ -114,7 +114,7 @@ export async function addHousehold(name) {
   fail(error);
   return data;
 }
-export async function renameSide(id, name) { fail((await supabase.from('sides').update({ name }).eq('id', id)).error); }
+export async function updateSide(id, patch) { fail((await supabase.from('sides').update(patch).eq('id', id)).error); }
 export async function adminSetPin(personId, pin) { fail((await supabase.rpc('admin_set_pin', { p_person: personId, p_pin: pin })).error); }
 
 // ---------- photos ----------

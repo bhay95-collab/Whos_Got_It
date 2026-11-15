@@ -18,7 +18,7 @@ One site, two entry links (one per side of the family), one shared database. Peo
 
 ### 1. Database (Supabase)
 1. Open the project in Supabase → **SQL Editor** → **New query**.
-2. Paste `sql/01_schema.sql` → **Run**. Then `sql/02_security.sql` → **Run**. Then your private seed file (`sql/03_seed.private.sql`, not stored in this repo) → **Run**. Then `sql/04_mark_this_year_drawn.sql` (stops the app re-drawing a year that was already drawn elsewhere) → **Run**. Each says "Success".
+2. Paste `sql/01_schema.sql` → **Run**. Then `sql/02_security.sql` → **Run**. Then your private seed file (`sql/03_seed.private.sql`, not stored in this repo) → **Run**. Then `sql/05_family_themes.sql` (per-family colours and welcome lines). Then `sql/04_mark_this_year_drawn.sql` (stops the app re-drawing a year that was already drawn elsewhere) → **Run**. Each says "Success".
 3. **Authentication → Sign In / Providers → Email**: switch **Confirm email OFF**, make sure sign-ups are allowed. (Logins are "person + PIN", with no real inboxes behind them, so confirmation emails can't work.)
 4. **Authentication → URL Configuration**: set **Site URL** to the GitHub Pages link above.
 

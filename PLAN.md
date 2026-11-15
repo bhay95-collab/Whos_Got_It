@@ -38,6 +38,7 @@ Tap your face → 4-digit PIN. Under the hood: fake email `p-<id>@whosgotit.loca
 | 5 | Draw engine + auto-run 1 Nov (Brisbane) + "your draw is ready, open the app" email | ✅ built, tested (see below) |
 | 5 | Import past draws as history | ⏳ when owner supplies it |
 | 6 | PWA manifests, icon set, install guide | ✅ built |
+| 6 | Neutral landing page; per-family accent colour + welcome line (editable in People tab) | ✅ built |
 | 6 | Offline shell (service worker), push notifications | later |
 
 ## Secret Santa rules (draw engine, `scripts/santa.mjs`)

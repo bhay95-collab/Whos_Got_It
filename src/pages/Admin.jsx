@@ -1,15 +1,25 @@
 import { useState } from 'react';
-import { renameSide } from '../lib/api.js';
+import { updateSide } from '../lib/api.js';
 import { Avatar, IconPlus } from '../ui.jsx';
 import PersonSheet from '../sheets/PersonSheet.jsx';
 import { useApp } from '../lib/ctx.jsx';
 import { fmtBirthday } from '../lib/dates.js';
 
+const ACCENTS = [['coral', 'Coral'], ['teal', 'Teal'], ['indigo', 'Indigo'], ['plum', 'Plum'], ['forest', 'Forest'], ['honey', 'Honey']];
+
 export default function Admin() {
   const { fam, reload, toast } = useApp();
-  const [names, setNames] = useState({});
-  const saveName = async (id) => { try { await renameSide(id, names[id].trim()); toast('Name saved'); setNames((n) => { const c = { ...n }; delete c[id]; return c; }); reload(); } catch (e) { toast(e.message); } };
   const [sheet, setSheet] = useState({ open: false, person: null });
+  const [draft, setDraft] = useState({});
+  const val = (sd, k) => draft[sd.id]?.[k] ?? sd[k] ?? '';
+  const edit = (sd, k, v) => setDraft((d) => ({ ...d, [sd.id]: { ...d[sd.id], [k]: v } }));
+  const saveSide = async (sd) => {
+    try {
+      const d = draft[sd.id] || {};
+      await updateSide(sd.id, { name: (d.name ?? sd.name).trim(), welcome: (d.welcome ?? sd.welcome ?? '').trim() || null, accent: d.accent ?? sd.accent });
+      toast('Saved'); setDraft((x) => { const c = { ...x }; delete c[sd.id]; return c; }); reload();
+    } catch (e) { toast(e.message.includes('accent') || e.message.includes('welcome') ? 'Run sql/05_family_themes.sql first (see README).' : e.message); }
+  };
   const sideNames = (id) => fam.personSides.filter((s) => s.person_id === id).map((s) => fam.sides.find((x) => x.id === s.side_id)?.name).filter(Boolean).join(' · ');
   const hh = (id) => fam.households.find((h) => h.id === id)?.name;
   const missing = fam.people.filter((p) => p.active && !p.is_child && (!p.email || !p.birth_month));
@@ -34,15 +44,17 @@ export default function Admin() {
           </button>
         ))}
       </div>
-      <p className="section-title">Family names</p>
-      <div className="card pad stack">
+      <p className="section-title">Families</p>
+      <div className="stack">
         {fam.sides.map((sd) => (
-          <div key={sd.id} className="row" style={{ gap: 8 }}>
-            <input className="input" aria-label={`Name for family ${sd.id}`} value={names[sd.id] ?? sd.name} onChange={(e) => setNames((n) => ({ ...n, [sd.id]: e.target.value }))} />
-            <button className="btn small" disabled={names[sd.id] === undefined || !names[sd.id].trim()} onClick={() => saveName(sd.id)}>Save</button>
+          <div key={sd.id} className="card pad stack" data-accent={val(sd, 'accent')} style={{ gap: 12 }}>
+            <label className="field"><span className="label">Name</span><input className="input" value={val(sd, 'name')} onChange={(e) => edit(sd, 'name', e.target.value)} /></label>
+            <label className="field"><span className="label">Welcome line (optional)</span><input className="input" placeholder="e.g. Welcome to the family" value={val(sd, 'welcome')} onChange={(e) => edit(sd, 'welcome', e.target.value)} /></label>
+            <div className="field"><span className="label">Colour</span>
+              <div className="chips">{ACCENTS.map(([k, label]) => <button key={k} className="chip swatch" data-accent={k} aria-pressed={val(sd, 'accent') === k} onClick={() => edit(sd, 'accent', k)}><i />{label}</button>)}</div></div>
+            <button className="btn small" disabled={!draft[sd.id]} onClick={() => saveSide(sd)}>Save {val(sd, 'name') || 'family'}</button>
           </div>
         ))}
-        <p className="small muted">Shown on the home screen and sign-in page, e.g. “Hay, Orr &amp; McVeigh”.</p>
       </div>
       <PersonSheet open={sheet.open} onClose={() => setSheet((s) => ({ ...s, open: false }))} person={sheet.person} mode="admin" onSaved={reload} />
     </main>

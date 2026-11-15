@@ -7,7 +7,9 @@
 create table if not exists public.sides (
   id        text primary key,            -- 'hm' | 'hb'
   name      text not null,
-  sort      int  not null default 0
+  sort      int  not null default 0,
+  accent    text not null default 'coral' check (accent in ('coral','teal','indigo','plum','forest','honey')),
+  welcome   text                                   -- optional line under the family name
 );
 
 create table if not exists public.households (

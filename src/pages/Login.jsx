@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Avatar, PinPad, IconBack, Spinner } from '../ui.jsx';
 import Landing from './Landing.jsx';
 import { loadRoster, loadSides, signIn, firstSignUp } from '../lib/api.js';
-import { ENTRY_SIDE } from '../lib/ctx.jsx';
+import { ENTRY_SIDE, applyAccent } from '../lib/ctx.jsx';
 import { firstName } from '../lib/dates.js';
 
 const logo = `${import.meta.env.BASE_URL}icons/icon-192.png`;
@@ -16,7 +16,7 @@ export default function Login() {
   const [draft, setDraft] = useState('');        // first-time: first PIN, awaiting confirmation
   const [error, setError] = useState('');
 
-  useEffect(() => { loadSides().then(setSides).catch((e) => setError(e.message)); }, []);
+  useEffect(() => { loadSides().then((r) => { setSides(r); applyAccent(r.find((x) => x.id === ENTRY_SIDE)?.accent); }).catch((e) => setError(e.message)); }, []);
   useEffect(() => {
     if (!side) return;
     setRoster(null);
@@ -32,7 +32,8 @@ export default function Login() {
     return firstSignUp(who.id, pin);
   };
 
-  const sideName = sides?.find((s) => s.id === side)?.name;
+  const sideRow = sides?.find((s) => s.id === side);
+  const sideName = sideRow?.name;
   if (!ENTRY_SIDE) return <Landing sides={sides} error={error} />;
 
   return (
@@ -41,6 +42,7 @@ export default function Login() {
         <img src={logo} alt="" />
         <h1>Who’s Got It?</h1>
         <p>{sideName || ' '}</p>
+        {sideRow?.welcome && <p className="small" style={{ marginTop: 2 }}>{sideRow.welcome}</p>}
       </div>
 
       {error && <p className="error" style={{ textAlign: 'center', marginTop: 16 }}>{error}</p>}

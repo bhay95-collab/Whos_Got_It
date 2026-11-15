@@ -6,7 +6,7 @@ import { loadItemCounts } from '../lib/api.js';
 import { nextBirthday, inDays, fmtBirthday, firstName, todayISO } from '../lib/dates.js';
 
 export default function Home({ go }) {
-  const { me, sidePeople, sideName, mySides, fam, side, setSide } = useApp();
+  const { me, sidePeople, sideName, sideWelcome, mySides, fam, side, setSide } = useApp();
   const [counts, setCounts] = useState({});
   useEffect(() => { loadItemCounts().then(setCounts).catch(() => {}); }, [side]);
 
@@ -24,6 +24,7 @@ export default function Home({ go }) {
         <div>
           <p className="muted">{greet}, {firstName(me)}</p>
           <h1>{sideName || 'Family'}</h1>
+          {sideWelcome && <p className="sub" style={{ marginTop: 6 }}>{sideWelcome}</p>}
         </div>
       </div>
 
