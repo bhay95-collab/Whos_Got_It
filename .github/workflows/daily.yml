@@ -1,0 +1,41 @@
+name: Daily job
+
+# 6:00 am Brisbane (UTC+10, no daylight saving) = 20:00 UTC the day before.
+# Keeps the free database awake, queues birthday reminders, runs the Secret Santa draw
+# from 1 November, and sends any queued emails.
+on:
+  schedule:
+    - cron: '0 20 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Practice run: log what would happen, send nothing'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-job
+  cancel-in-progress: false
+
+jobs:
+  daily:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Work out the site address
+        run: echo "SITE_URL=https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}" >> "$GITHUB_ENV"
+      - name: Run the daily job
+        run: node scripts/daily.mjs
+        env:
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}

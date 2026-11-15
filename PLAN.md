@@ -31,26 +31,27 @@ Tap your face → 4-digit PIN. Under the hood: fake email `p-<id>@whosgotit.loca
 | 3 | Claims: thinking / bought, off-list gifts, reveal-who (blurred), message buyer | ✅ built |
 | 3 | Occasion dates; given gifts drop off the list automatically; past-gifts history | ✅ built |
 | 3 | Chip-in group gifts (tables exist) | ⏳ UI next |
-| 4 | Daily GitHub Action: keep DB awake, send queued emails | ⏳ next |
-| 4 | Birthday reminder email, 6 weeks out, to everyone on that person's side(s) except them | ⏳ next |
+| 4 | Daily GitHub Action: keep DB awake, send queued emails | ✅ built (needs 3 secrets, see README) |
+| 4 | Birthday reminder email, 6 weeks out, to everyone on that person's side(s) except them | ✅ built |
 | 4 | Birthday calendar (.ics) link | ⏳ next |
 | 5 | Secret Santa page: unwrap reveal, kids' picks for parents, "who's had who" grid | ✅ built (reads data) |
-| 5 | Draw engine + auto-run 1 Nov (Brisbane) + "your draw is ready, open the app" email | ⏳ next |
+| 5 | Draw engine + auto-run 1 Nov (Brisbane) + "your draw is ready, open the app" email | ✅ built, tested (see below) |
 | 5 | Import past draws as history | ⏳ when owner supplies it |
 | 6 | PWA manifests, icon set, install guide | ✅ built |
 | 6 | Offline shell (service worker), push notifications | later |
 
-## Secret Santa rules (draw engine, to build)
+## Secret Santa rules (draw engine, `scripts/santa.mjs`)
 Per side, each year, a one-for-one derangement over everyone on that side:
 1. Never yourself; never your partner.
 2. Kids never draw anyone in their own household (parents organise the buying, so it would be buying for themselves).
 3. Never last year's recipient.
 4. Prefer the recipient the giver has had **least often** (ties → longest ago, then random).
+Solved exactly as a minimum-cost assignment (Hungarian algorithm). Simulated over 30 years with 12 people: zero repeats of last year, and everyone has had everyone within 11–12 years (the theoretical floor is about 10).
 Feasibility: if no solution exists, relax "least often" first, never rules 1–3, and alert the admin by email. History is stored in `santa_pairs`/`santa_draws`; no fixed 10-year plan, so new partners/babies never break it.
 Results readable only by the giver (and a child's parents) until 26 December.
 
 ## Reminders
-Daily Action at ~6am Brisbane: for each person whose birthday is exactly 42 days away, queue one email per recipient on their side(s) (excluding the birthday person). `email_queue.dedupe_key` prevents doubles. Sent from a dedicated free Gmail via an App Password stored as a GitHub secret. Reminder also nudges the birthday person if their list is empty.
+Daily Action at ~6am Brisbane: for each person whose birthday is 1–42 days away, queue one email per recipient on their side(s) (excluding the birthday person). `email_queue.dedupe_key` prevents doubles. Sent from a dedicated free Gmail via an App Password stored as a GitHub secret. Reminder also nudges the birthday person if their list is empty.
 
 ## Decisions log
 - Reuse nothing from Training Card / RehabMetrics projects (see CLAUDE.md).

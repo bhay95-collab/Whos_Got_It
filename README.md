@@ -32,6 +32,19 @@ Open your side's link, tap your face, choose a 4-digit PIN. Fill in birthday and
 ### 4. Phone
 iPhone: Safari → Share → **Add to Home Screen**. Android: Chrome ⋮ → **Install app**.
 
+### 5. Emails and the automatic Secret Santa draw
+The **Daily job** workflow (6am Brisbane) needs three secrets. GitHub repo → **Settings → Secrets and variables → Actions → New repository secret**:
+
+| Name | Value |
+|---|---|
+| `SUPABASE_SERVICE_KEY` | Supabase → Project Settings → API Keys → the **service_role** (secret) key. Never share it or put it in code. |
+| `GMAIL_USER` | The sender Gmail address |
+| `GMAIL_APP_PASSWORD` | The 16-letter App Password for that Gmail (Google Account → Security → 2-Step Verification → App passwords) |
+
+Then **Actions → Daily job → Run workflow**, tick **Practice run**, and check the log says "Daily job done". Untick it for real runs. The same workflow can be re-run by hand if a draw ever fails.
+
+GitHub switches scheduled workflows off after 60 days with no commits to the repo. If emails stop, open the Actions tab and click **Enable workflow**.
+
 ## Developing
 
 ```bash
