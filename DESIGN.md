@@ -1,6 +1,6 @@
 # Design notes
 
-Same family as the Training Card app: Apple-store neutrals, teal accent, Inter, soft shadows, light + dark.
+Apple-style restraint: warm cream surfaces, coral accent taken from the app icon (#b4483a light, #ef8c79 dark), Inter, soft warm shadows, light + dark.
 
 - **Tokens** are CSS variables in `src/styles.css` (`--bg`, `--surface`, `--accent` …). Never hard-code colours in components.
 - **Avatars** are pastel tiles (blue pink lilac green yellow peach) or a photo. Used as the "tap your face" sign-in.
