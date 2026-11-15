@@ -15,8 +15,9 @@ const DETAILS = [
 ];
 const blank = { full_name: '', email: '', color: 'blue', photo_url: '', birth_day: '', birth_month: '', birth_year: '', is_child: false, is_admin: false, active: true, household_id: '', spouse_id: '', sides: [], sizes: {} };
 
-/** mode: 'self' (my profile / my child) | 'admin' (any person, or add new when person is null) */
-export default function PersonSheet({ open, onClose, person, mode = 'self', title, onSaved }) {
+/** mode: 'self' (my profile / my child) | 'admin' (any person, or add new when person is null).
+ *  brief: first sign-in, ask only for what reminders need (birthday + email); the rest lives under Me. */
+export default function PersonSheet({ open, onClose, person, mode = 'self', title, onSaved, brief = false }) {
   const { fam, toast, side } = useApp();
   const [f, setF] = useState(blank);
   const [busy, setBusy] = useState(false);
@@ -89,6 +90,8 @@ export default function PersonSheet({ open, onClose, person, mode = 'self', titl
 
   return (
     <Sheet open={open} onClose={onClose} title={title || (person ? (admin ? 'Edit person' : 'Your profile') : 'Add a person')}>
+      {brief && <p className="muted">Two quick things so birthday reminders and Secret Santa emails reach you. Photo and sizes can wait. They live under <b>Me</b>.</p>}
+      {!brief && <>
       <div className="row">
         <Avatar person={{ ...f, full_name: f.full_name || '?' }} size={64} />
         <button className="btn gray small" onClick={() => file.current?.click()} disabled={busy}><IconCamera size={18} /> {f.photo_url ? 'Change photo' : 'Add a photo'}</button>
@@ -99,6 +102,7 @@ export default function PersonSheet({ open, onClose, person, mode = 'self', titl
       </div>
 
       <Field label="Name"><input className="input" value={f.full_name} onChange={(e) => set('full_name', e.target.value)} autoComplete="name" /></Field>
+      </>}
 
       <Field label="Birthday" group>
         <div className="row" style={{ gap: 8 }}>
@@ -116,11 +120,13 @@ export default function PersonSheet({ open, onClose, person, mode = 'self', titl
         <input className="input" type="email" inputMode="email" autoCapitalize="none" autoCorrect="off" value={f.email} onChange={(e) => set('email', e.target.value)} autoComplete="email" />
       </Field>
 
+      {!brief && <>
       <p className="section-title" style={{ margin: '8px 0 -4px' }}>My details</p>
       <p className="small muted" style={{ marginTop: -8 }}>Helps people buy the right thing.</p>
       {DETAILS.map(([k, l, ph]) => (
         <Field key={k} label={l}><input className="input" placeholder={ph} value={f.sizes[k] || ''} onChange={(e) => setSize(k, e.target.value)} /></Field>
       ))}
+      </>}
 
       {admin && (
         <>
@@ -162,8 +168,9 @@ export default function PersonSheet({ open, onClose, person, mode = 'self', titl
         </>
       )}
 
-      {err && <p className="error">{err}</p>}
+      {err && <p className="error" role="alert">{err}</p>}
       <button className="btn block" onClick={save} disabled={busy}>{busy ? 'Saving…' : person ? 'Save' : 'Add person'}</button>
+      {brief && <button className="btn plain block" onClick={onClose}>Later</button>}
       {admin && person && <button className="btn danger block" onClick={remove}>Delete person</button>}
     </Sheet>
   );

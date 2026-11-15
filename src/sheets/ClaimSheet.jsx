@@ -34,7 +34,7 @@ export default function ClaimSheet({ open, onClose, recipient, item, claim, onSa
         id: claim?.id, recipient_id: recipient.id, item_id: item?.id ?? claim?.item_id ?? null, claimer_id: me.id,
         description, state, occasion_type: occ, occasion_date: date,
       });
-      toast(state === 'bought' ? 'Marked as bought 🎁' : 'Noted — you’re thinking about it');
+      toast(state === 'bought' ? 'Locked in for you 🎁' : 'Noted as a maybe');
       onSaved(); onClose();
     } catch (e) { setErr(e.message); }
     setBusy(false);
@@ -48,17 +48,17 @@ export default function ClaimSheet({ open, onClose, recipient, item, claim, onSa
   return (
     <Sheet open={open} onClose={onClose} title={item || claim?.item_id ? 'Get this for ' + firstName(recipient) : 'Something not on the list'}>
       {item ? <p className="item-title">{item.title}</p> : (
-        <Field label={`What did you get ${firstName(recipient)}?`}>
+        <Field label={`What are you getting ${firstName(recipient)}?`}>
           <input className="input" placeholder="e.g. Blue jumper" value={text} onChange={(e) => setText(e.target.value)} />
         </Field>
       )}
 
       <Field label="Status" group>
         <div className="seg">
-          <button aria-pressed={state === 'thinking'} onClick={() => setState('thinking')}>Thinking about it</button>
-          <button aria-pressed={state === 'bought'} onClick={() => setState('bought')}>Bought it</button>
+          <button aria-pressed={state === 'thinking'} onClick={() => setState('thinking')}>Maybe</button>
+          <button aria-pressed={state === 'bought'} onClick={() => setState('bought')}>I’m getting it</button>
         </div>
-        <span className="small muted">{state === 'bought' ? 'Locks it in so nobody doubles up.' : 'A soft hold — others will see someone is considering it.'}</span>
+        <span className="small muted">{state === 'bought' ? 'Locks it so nobody else gets it too.' : 'A soft hold. Others see someone is considering it, and can still take it.'}</span>
       </Field>
 
       <Field label="For" group>
@@ -69,8 +69,8 @@ export default function ClaimSheet({ open, onClose, recipient, item, claim, onSa
         <span className="small muted">After this date it drops off the list automatically.</span>
       </Field>
 
-      {err && <p className="error">{err}</p>}
-      <button className="btn block" onClick={save} disabled={busy}>{claim ? 'Save' : state === 'bought' ? 'I bought it' : 'I’m thinking about it'}</button>
+      {err && <p className="error" role="alert">{err}</p>}
+      <button className="btn block" onClick={save} disabled={busy}>{busy ? 'Saving…' : claim ? 'Save' : state === 'bought' ? 'I’m getting it' : 'Save as a maybe'}</button>
       {claim && <button className="btn danger block" onClick={undo} disabled={busy}>Undo — I’m not getting it</button>}
     </Sheet>
   );

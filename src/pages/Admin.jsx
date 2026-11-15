@@ -29,7 +29,7 @@ export default function Admin() {
       <div className="page-head"><div><h1>People</h1><p className="sub">{fam.people.length} in the family</p></div>
         <button className="btn small" onClick={() => setSheet({ open: true, person: null })}><IconPlus size={18} /> Add</button></div>
 
-      {missing.length > 0 && <div className="card pad" style={{ marginBottom: 16 }}><p className="small"><b>{missing.length} adult{missing.length > 1 ? 's' : ''} still need an email or birthday</b> — reminders can’t reach them yet: {missing.map((p) => p.full_name.split(' ')[0]).join(', ')}.</p></div>}
+      {missing.length > 0 && <div className="card pad" style={{ marginBottom: 16 }}><p className="small"><b>{missing.length} adult{missing.length > 1 ? 's' : ''} still need{missing.length > 1 ? '' : 's'} an email or birthday</b> — reminders can’t reach them yet: {missing.map((p) => p.full_name.split(' ')[0]).join(', ')}.</p></div>}
 
       <div className="list">
         {fam.people.map((p) => (
