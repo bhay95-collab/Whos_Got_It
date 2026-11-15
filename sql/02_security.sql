@@ -14,49 +14,54 @@
 -- ============================================================
 
 -- ---------- helper functions ----------
-create or replace function public.current_person() returns uuid
+-- These live in a "private" schema that the web API does not expose, so nobody can call them
+-- directly over the internet. The row-level rules (which run as the signed-in user) still use them.
+create schema if not exists private;
+grant usage on schema private to authenticated, service_role;
+
+create or replace function private.current_person() returns uuid
 language sql stable security definer set search_path = '' as $$
   select id from public.people where auth_user_id = auth.uid()
 $$;
 
-create or replace function public.is_admin() returns boolean
+create or replace function private.is_admin() returns boolean
 language sql stable security definer set search_path = '' as $$
   select coalesce((select is_admin from public.people where auth_user_id = auth.uid()), false)
 $$;
 
 -- true if p is a child in the same household as the signed-in adult
-create or replace function public.is_my_child(p uuid) returns boolean
+create or replace function private.is_my_child(p uuid) returns boolean
 language sql stable security definer set search_path = '' as $$
   select exists (
     select 1
     from public.people c, public.people m
     where c.id = p and c.is_child
-      and m.id = public.current_person() and not m.is_child
+      and m.id = private.current_person() and not m.is_child
       and m.household_id is not null and m.household_id = c.household_id
   )
 $$;
 
-create or replace function public.can_manage(p uuid) returns boolean
+create or replace function private.can_manage(p uuid) returns boolean
 language sql stable security definer set search_path = '' as $$
-  select p = public.current_person() or public.is_admin() or public.is_my_child(p)
+  select p = private.current_person() or private.is_admin() or private.is_my_child(p)
 $$;
 
-create or replace function public.brisbane_today() returns date
+create or replace function private.brisbane_today() returns date
 language sql stable set search_path = '' as $$
   select (now() at time zone 'Australia/Brisbane')::date
 $$;
 
 -- Secret Santa results open to everyone from 26 December of the draw year
-create or replace function public.santa_revealed(y int) returns boolean
+create or replace function private.santa_revealed(y int) returns boolean
 language sql stable set search_path = '' as $$
-  select public.brisbane_today() >= make_date(y, 12, 26)
+  select private.brisbane_today() >= make_date(y, 12, 26)
 $$;
 
 -- ---------- stop non-admins editing sensitive columns on people ----------
 create or replace function public.people_guard() returns trigger
 language plpgsql set search_path = '' as $$
 begin
-  if current_user = 'authenticated' and not public.is_admin() then
+  if current_user = 'authenticated' and not private.is_admin() then
     if new.is_admin     is distinct from old.is_admin
     or new.auth_user_id is distinct from old.auth_user_id
     or new.household_id is distinct from old.household_id
@@ -102,7 +107,7 @@ create or replace function public.admin_set_pin(p_person uuid, p_pin text) retur
 language plpgsql security definer set search_path = '' as $$
 declare uid uuid;
 begin
-  if not public.is_admin() then raise exception 'Admin only'; end if;
+  if not private.is_admin() then raise exception 'Admin only'; end if;
   if p_pin !~ '^[0-9]{4}$' then raise exception 'PIN must be 4 digits'; end if;
   select auth_user_id into uid from public.people where id = p_person;
   if uid is null then return; end if;   -- never signed up: they just set a PIN themselves
@@ -118,7 +123,7 @@ language sql security definer set search_path = '' as $$
    where archived_at is null
      and id in (select item_id from public.claims
                  where state = 'bought' and item_id is not null
-                   and occasion_date < public.brisbane_today());
+                   and occasion_date < private.brisbane_today());
 $$;
 
 -- ---------- row-level security ----------
@@ -141,45 +146,45 @@ do $$ declare r record; begin
 end $$;
 
 create policy sides_read   on public.sides for select to anon, authenticated using (true);
-create policy sides_admin  on public.sides for all to authenticated using (public.is_admin()) with check (public.is_admin());
+create policy sides_admin  on public.sides for all to authenticated using (private.is_admin()) with check (private.is_admin());
 
 create policy hh_read      on public.households for select to authenticated using (true);
-create policy hh_admin     on public.households for all to authenticated using (public.is_admin()) with check (public.is_admin());
+create policy hh_admin     on public.households for all to authenticated using (private.is_admin()) with check (private.is_admin());
 
 create policy people_read   on public.people for select to authenticated using (true);
-create policy people_add    on public.people for insert to authenticated with check (public.is_admin());
-create policy people_edit   on public.people for update to authenticated using (public.can_manage(id)) with check (public.can_manage(id));
-create policy people_remove on public.people for delete to authenticated using (public.is_admin());
+create policy people_add    on public.people for insert to authenticated with check (private.is_admin());
+create policy people_edit   on public.people for update to authenticated using (private.can_manage(id)) with check (private.can_manage(id));
+create policy people_remove on public.people for delete to authenticated using (private.is_admin());
 
 create policy ps_read      on public.person_sides for select to authenticated using (true);
-create policy ps_admin     on public.person_sides for all to authenticated using (public.is_admin()) with check (public.is_admin());
+create policy ps_admin     on public.person_sides for all to authenticated using (private.is_admin()) with check (private.is_admin());
 
 create policy wl_read      on public.wishlist_items for select to authenticated using (true);
-create policy wl_add       on public.wishlist_items for insert to authenticated with check (public.can_manage(person_id));
-create policy wl_edit      on public.wishlist_items for update to authenticated using (public.can_manage(person_id)) with check (public.can_manage(person_id));
-create policy wl_remove    on public.wishlist_items for delete to authenticated using (public.can_manage(person_id));
+create policy wl_add       on public.wishlist_items for insert to authenticated with check (private.can_manage(person_id));
+create policy wl_edit      on public.wishlist_items for update to authenticated using (private.can_manage(person_id)) with check (private.can_manage(person_id));
+create policy wl_remove    on public.wishlist_items for delete to authenticated using (private.can_manage(person_id));
 
 -- claims: the recipient can never see claims made for them
-create policy claims_read  on public.claims for select to authenticated using (recipient_id is distinct from public.current_person());
-create policy claims_add   on public.claims for insert to authenticated with check (claimer_id = public.current_person() and recipient_id <> public.current_person());
-create policy claims_edit  on public.claims for update to authenticated using (claimer_id = public.current_person()) with check (claimer_id = public.current_person() and recipient_id <> public.current_person());
-create policy claims_remove on public.claims for delete to authenticated using (claimer_id = public.current_person());
+create policy claims_read  on public.claims for select to authenticated using (recipient_id is distinct from private.current_person());
+create policy claims_add   on public.claims for insert to authenticated with check (claimer_id = private.current_person() and recipient_id <> private.current_person());
+create policy claims_edit  on public.claims for update to authenticated using (claimer_id = private.current_person()) with check (claimer_id = private.current_person() and recipient_id <> private.current_person());
+create policy claims_remove on public.claims for delete to authenticated using (claimer_id = private.current_person());
 
-create policy chip_read    on public.chip_ins for select to authenticated using (recipient_id is distinct from public.current_person());
-create policy chip_add     on public.chip_ins for insert to authenticated with check (organiser_id = public.current_person() and recipient_id <> public.current_person());
-create policy chip_edit    on public.chip_ins for update to authenticated using (organiser_id = public.current_person()) with check (organiser_id = public.current_person());
-create policy chip_remove  on public.chip_ins for delete to authenticated using (organiser_id = public.current_person());
+create policy chip_read    on public.chip_ins for select to authenticated using (recipient_id is distinct from private.current_person());
+create policy chip_add     on public.chip_ins for insert to authenticated with check (organiser_id = private.current_person() and recipient_id <> private.current_person());
+create policy chip_edit    on public.chip_ins for update to authenticated using (organiser_id = private.current_person()) with check (organiser_id = private.current_person());
+create policy chip_remove  on public.chip_ins for delete to authenticated using (organiser_id = private.current_person());
 create policy pledge_read  on public.chip_in_pledges for select to authenticated using (exists (select 1 from public.chip_ins c where c.id = chip_in_id));
-create policy pledge_add   on public.chip_in_pledges for insert to authenticated with check (person_id = public.current_person());
-create policy pledge_edit  on public.chip_in_pledges for update to authenticated using (person_id = public.current_person()) with check (person_id = public.current_person());
-create policy pledge_remove on public.chip_in_pledges for delete to authenticated using (person_id = public.current_person());
+create policy pledge_add   on public.chip_in_pledges for insert to authenticated with check (person_id = private.current_person());
+create policy pledge_edit  on public.chip_in_pledges for update to authenticated using (person_id = private.current_person()) with check (person_id = private.current_person());
+create policy pledge_remove on public.chip_in_pledges for delete to authenticated using (person_id = private.current_person());
 
 -- Secret Santa: your own pick (and your kids'), or everything once revealed. No admin exception, on purpose.
 create policy santa_draws_read on public.santa_draws for select to authenticated using (true);
 create policy santa_pairs_read on public.santa_pairs for select to authenticated using (
-  giver_id = public.current_person()
-  or public.is_my_child(giver_id)
-  or exists (select 1 from public.santa_draws d where d.id = draw_id and public.santa_revealed(d.year))
+  giver_id = private.current_person()
+  or private.is_my_child(giver_id)
+  or exists (select 1 from public.santa_draws d where d.id = draw_id and private.santa_revealed(d.year))
 );
 
 -- ---------- table access ----------
@@ -192,17 +197,22 @@ grant insert, update, delete on public.sides to authenticated;
 grant select on public.santa_draws, public.santa_pairs to authenticated;
 grant all on all tables in schema public to service_role;
 
-revoke execute on all functions in schema public from public, anon;
+revoke execute on all functions in schema public  from public, anon;
+revoke execute on all functions in schema private from public, anon;
 grant execute on function public.login_roster(text)         to anon, authenticated;
-grant execute on function public.current_person()           to authenticated, service_role;
-grant execute on function public.is_admin()                 to authenticated, service_role;
-grant execute on function public.is_my_child(uuid)          to authenticated, service_role;
-grant execute on function public.can_manage(uuid)           to authenticated, service_role;
-grant execute on function public.brisbane_today()           to authenticated, service_role;
-grant execute on function public.santa_revealed(int)        to authenticated, service_role;
+grant execute on function private.current_person()           to authenticated, service_role;
+grant execute on function private.is_admin()                 to authenticated, service_role;
+grant execute on function private.is_my_child(uuid)          to authenticated, service_role;
+grant execute on function private.can_manage(uuid)           to authenticated, service_role;
+grant execute on function private.brisbane_today()           to authenticated, service_role;
+grant execute on function private.santa_revealed(int)        to authenticated, service_role;
 grant execute on function public.claim_person(uuid)         to authenticated;
 grant execute on function public.admin_set_pin(uuid, text)  to authenticated;
 grant execute on function public.archive_given_items()      to authenticated, service_role;
+
+-- clean up: older versions of this script put the helpers in the public (API-exposed) schema
+drop function if exists public.current_person(), public.is_admin(), public.is_my_child(uuid),
+                        public.can_manage(uuid), public.brisbane_today(), public.santa_revealed(int);
 
 -- ---------- photo storage (wishlist photos + profile faces) ----------
 insert into storage.buckets (id, name, public)
