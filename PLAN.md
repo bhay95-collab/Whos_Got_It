@@ -62,5 +62,5 @@ Daily Action at ~6am Brisbane: for each person whose birthday is exactly 42 days
 ## Open items
 - Birthdays/emails for everyone (collected on first sign-in).
 - Past Secret Santa history (owner to supply later).
-- Dedicated Gmail account + App Password for sending.
+- Gmail sender account created; still needs 2-Step Verification + an App Password, stored as a GitHub Actions secret (never in the repo).
 - Supabase `item-photos` / `avatars` buckets are public-read (guessable-URL privacy is fine for this use).

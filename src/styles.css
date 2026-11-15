@@ -204,7 +204,7 @@ textarea.input { min-height: 84px; resize: vertical; }
 
 /* ---------- login ---------- */
 .hero { text-align: center; padding: 28px 0 8px; }
-.hero img { width: 88px; height: 88px; border-radius: 20px; box-shadow: var(--shadow-md); }
+.hero img { width: 96px; height: 96px; filter: drop-shadow(0 8px 16px rgba(120, 50, 30, 0.18)); }
 .hero h1 { margin-top: 16px; }
 .hero p { color: var(--text-2); margin-top: 6px; }
 .face-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 24px; }

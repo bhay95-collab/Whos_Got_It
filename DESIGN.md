@@ -7,4 +7,4 @@ Same family as the Training Card app: Apple-store neutrals, teal accent, Inter, 
 - **Motion**: springs (`bounce: 0`, ~0.4s) by default; bounce only when the gesture had momentum (the Santa unwrap). Sheets track the finger and hand off release velocity. `MotionConfig reducedMotion="user"` turns slides into fades.
 - **Touch**: press feedback on `:active`, hover only under `(hover: hover)`, no tap highlight, 100dvh, safe-area padding, no zoom on inputs.
 - **Surprise protection**: anything that reveals who bought what is blurred until tapped, so a screen glimpsed by the birthday person spoils nothing. (The database also hides claims from the recipient.)
-- **Icon**: white gift tag with a "?" on teal (`public/icons/icon.svg`, rendered by `scripts/make-icons.mjs`).
+- **Icon**: cream tile, coral gift with a ribbon that curls into a "?" (`public/icons/source.webp` is the master; `scripts/make-icons.py` builds every size, including the full-bleed iOS and maskable Android versions).
