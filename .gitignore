@@ -1,0 +1,8 @@
+node_modules
+dist
+.DS_Store
+*.log
+# Real family data never goes in this public repo
+sql/*.private.sql
+.env
+.env.*
