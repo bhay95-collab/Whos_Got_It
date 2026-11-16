@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { run } from '../scripts/daily.mjs';
-import { planBirthdayEmails, renderEmail } from '../scripts/emails.mjs';
+import { planBirthdayEmails, planSantaEmails, renderEmail } from '../scripts/emails.mjs';
 
 const P = (id, o = {}) => ({ id, full_name: `${id} Test`, active: true, is_child: false, is_admin: false, household_id: `h-${id}`, spouse_id: null, email: `${id}@example.com`, birth_month: null, birth_day: null, birth_year: null, ...o });
 const mkData = () => ({
@@ -136,4 +136,17 @@ test('a draw that already exists gets its "ready" emails queued once, including 
   data.people.find((p) => p.id === 'fay').email = 'fay@example.com';
   await run({ store, mailer: m, now: NOW('2026-11-18'), siteUrl: 'u', log() {} });
   assert.deepEqual(santa(), ['ann@example.com', 'dan@example.com', 'eve@example.com', 'fay@example.com']);
+});
+
+test('a couple sharing one inbox gets one email, and never a reminder about their own birthday', () => {
+  const d = mkData();
+  d.people.push(P('kei', { email: 'Couple@Example.com', birth_month: 12, birth_day: 20 }), P('lib', { email: 'couple@example.com' }));
+  d.personSides.push({ person_id: 'kei', side_id: 'hm' }, { person_id: 'lib', side_id: 'hm' });
+  const mails = planBirthdayEmails({ ...d, today: '2026-11-15', siteUrl: 'u' });
+  const aboutAnn = mails.filter((m) => m.dedupe_key.startsWith('bday:ann:') && m.to_email.toLowerCase() === 'couple@example.com');
+  assert.equal(aboutAnn.length, 1, 'one reminder about Ann for the shared inbox');
+  const aboutKei = mails.filter((m) => m.dedupe_key.startsWith('bday:kei:'));
+  assert.ok(aboutKei.length > 0 && aboutKei.every((m) => m.to_email.toLowerCase() !== 'couple@example.com'), 'Keith’s inbox never hears about Keith');
+  const santa = planSantaEmails({ draw: { id: 'd', side_id: 'hm' }, side: { id: 'hm', name: 'A' }, givers: d.people, people: d.people, siteUrl: 'u' });
+  assert.equal(santa.filter((m) => m.to_email.toLowerCase() === 'couple@example.com').length, 1, 'one Secret Santa email for the shared inbox');
 });

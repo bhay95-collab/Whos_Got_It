@@ -5,6 +5,8 @@ export const BIRTHDAY_LEAD_DAYS = 42;   // 6 weeks
 const first = (p) => p.full_name.split(' ')[0];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const plural = (n, one, many) => (n === 1 ? one : many);
+const addr = (e) => String(e || '').trim().toLowerCase();
+const byId = (a, b) => String(a.id).localeCompare(String(b.id));   // stable order, so a shared inbox always maps to the same person
 
 /* ---------- design: the family's colour band on top, logo + family name, white card (see DESIGN.md) ---------- */
 // [light accent, dark-mode accent, text on dark-mode accent]: same values as src/styles.css
@@ -94,10 +96,13 @@ export function planBirthdayEmails({ people, personSides, sides = [], items, cla
     const n = items ? free.length : (itemCounts[p.id] || 0);
     const sub = [longDate(b.iso), toGo(b.days), b.turning ? `turning ${b.turning}` : null].filter(Boolean).join(' · ');
 
-    for (const r of people) {
+    // One email per inbox (couples can share one), and never to the inbox the birthday person reads.
+    const sentTo = new Set([addr(p.email)].filter(Boolean));
+    for (const r of [...people].sort(byId)) {
       if (!r.active || r.is_child || !r.email || r.id === p.id) continue;
       const shared = sidesOf(r.id).find((s) => mine.includes(s));
-      if (!shared) continue;
+      if (!shared || sentTo.has(addr(r.email))) continue;
+      sentTo.add(addr(r.email));
       const url = `${siteUrl}/${shared}/#/p/${p.id}`;
       const side = sideRow(shared);
       const acc = ACCENTS[side.accent] || ACCENTS.coral;
@@ -144,8 +149,9 @@ export function planBirthdayEmails({ people, personSides, sides = [], items, cla
 export function planSantaEmails({ draw, side, sideName, givers, people, siteUrl }) {
   const url = `${siteUrl}/${draw.side_id}/#/santa`;
   const s = side || { id: draw.side_id, name: sideName };
-  return givers
-    .filter((g) => !g.is_child && g.email)
+  const seen = new Set();   // one email per inbox: couples sharing an address get one, not two
+  return [...givers].sort(byId)
+    .filter((g) => !g.is_child && g.email && !seen.has(addr(g.email)) && seen.add(addr(g.email)))
     .map((g) => {
       const kids = people.filter((k) => k.is_child && k.household_id && k.household_id === g.household_id && givers.some((x) => x.id === k.id));
       const kidLine = kids.length ? ` ${kids.map(first).join(' and ')} ${kids.length > 1 ? 'have' : 'has'} a pick too, on the same page.` : '';
