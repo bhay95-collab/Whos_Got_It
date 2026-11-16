@@ -9,10 +9,14 @@ const addr = (e) => String(e || '').trim().toLowerCase();
 const byId = (a, b) => String(a.id).localeCompare(String(b.id));   // stable order, so a shared inbox always maps to the same person
 
 /* ---------- design: the family's colour band on top, logo + family name, white card (see DESIGN.md) ---------- */
-// [light accent, dark-mode accent, text on dark-mode accent]: same values as src/styles.css
+// [accent, soft tint, ink on tint, dark-mode accent, text on dark-mode accent, dark-mode tint]: the "Dusty" palette, same values as src/styles.css
 const ACCENTS = {
-  coral: ['#b4483a', '#ef8c79', '#2a0f09'], teal: ['#0b7080', '#5fc4d1', '#05252a'], indigo: ['#4a58b8', '#9aa6f0', '#0f1440'],
-  plum: ['#8a3f8f', '#d79be0', '#2e0f33'], forest: ['#2f7a4b', '#7fd09b', '#08240f'], honey: ['#9a6200', '#f0b95a', '#2e1d00'],
+  coral: ['#8f594b', '#feebe6', '#583127', '#e7aea0', '#2a130d', '#3b2824'],
+  honey: ['#816334', '#f8efe0', '#4e3914', '#d7b98b', '#251803', '#362c1c'],
+  forest: ['#487552', '#e6f5e8', '#24462c', '#9ecba6', '#0b2010', '#233226'],
+  teal: ['#27767a', '#e0f5f6', '#034649', '#86cccf', '#002022', '#1b3234'],
+  indigo: ['#4b6b94', '#e7f1ff', '#273e5c', '#a0c0eb', '#0d1b2d', '#242f3d'],
+  plum: ['#82597e', '#f9ebf7', '#4f314c', '#d8aed3', '#251323', '#372835'],
 };
 const C = { bg: '#fcf6f1', card: '#ffffff', text: '#2b1f1b', text2: '#75645d', line: '#f0e5de', tile: '#f2e8e0',
   dbg: '#140e0c', dcard: '#221915', dtext: '#f8ede7', dtext2: '#bba8a0', dline: '#30251f', dtile: '#33271f' };
@@ -31,18 +35,18 @@ export function renderEmail({ siteUrl, side, preheader, title, subtitle, body = 
 <style>
 @media (prefers-color-scheme: dark){
   .bg{background:${C.dbg}!important} .card{background:${C.dcard}!important} .t1{color:${C.dtext}!important} .t2{color:${C.dtext2}!important}
-  .line{border-color:${C.dline}!important} .tile{background:${C.dtile}!important} .acc{color:${acc[1]}!important}
-  .btn{background:${acc[1]}!important;color:${acc[2]}!important}
+  .line{border-color:${C.dline}!important} .tile{background:${C.dtile}!important} .acc{color:${acc[3]}!important}
+  .btn{background:${acc[3]}!important;color:${acc[4]}!important} .band{background:${acc[5]}!important} .bandt{color:${C.dtext}!important}
 }
 </style></head>
 <body class="bg" style="margin:0;padding:0;background:${C.bg}">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all">${esc(preheader)}${'&#8199;&#847;'.repeat(40)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="bg" style="background:${C.bg}"><tr><td align="center" style="padding:24px 16px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;font-family:${FONT}">
-<tr><td style="background:${acc[0]};border-radius:20px 20px 0 0;padding:16px 24px">
+<tr><td class="band" style="background:${acc[1]};border-radius:20px 20px 0 0;padding:16px 24px">
   <table role="presentation" cellpadding="0" cellspacing="0"><tr>
   <td><img src="${siteUrl}/icons/icon-192.png" width="28" height="28" alt="" style="display:block;border-radius:7px"></td>
-  <td style="padding-left:10px;font-size:14px;font-weight:600;color:#ffffff;font-family:${FONT}">${famName}</td></tr></table>
+  <td class="bandt" style="padding-left:10px;font-size:14px;font-weight:600;color:${acc[2]};font-family:${FONT}">${famName}</td></tr></table>
 </td></tr>
 <tr><td class="card" style="background:${C.card};border-radius:0 0 20px 20px;padding:24px">
   <div class="t1" style="font-size:24px;font-weight:700;letter-spacing:-0.5px;line-height:1.2;color:${C.text}">${esc(title)}</div>
@@ -113,7 +117,7 @@ export function planBirthdayEmails({ people, personSides, sides = [], items, cla
         : '';
       out.push({
         kind: 'birthday', to_email: r.email,
-        subject: `${name}’s birthday is coming up 🎁`,
+        subject: `${name}’s birthday is coming up`,
         text_body: `${name}’s birthday is coming up! ${sub}. ${n ? `${n} ${plural(n, 'idea is', 'ideas are')} still up for grabs on their list.` : `Nothing on their list yet.`}\n${url}`,
         html: renderEmail({
           siteUrl, side, title: `${name}’s birthday is coming up!`, subtitle: sub,
@@ -130,7 +134,7 @@ export function planBirthdayEmails({ people, personSides, sides = [], items, cla
       const listLine = n ? `your list has ${n} ${plural(n, 'idea', 'ideas')}` : 'your list is empty';
       out.push({
         kind: 'birthday', to_email: p.email,
-        subject: 'Your birthday’s coming up 🎂',
+        subject: 'Your birthday’s coming up',
         text_body: `Your birthday's coming up! ${toGo(b.days)}, and ${listLine}. Add a few things you'd love so the family knows what to get.\n${url}`,
         html: renderEmail({
           siteUrl, side: sideRow(mine[0]), title: 'Your birthday’s coming up!', subtitle: sub,
@@ -157,7 +161,7 @@ export function planSantaEmails({ draw, side, sideName, givers, people, siteUrl 
       const kidLine = kids.length ? ` ${kids.map(first).join(' and ')} ${kids.length > 1 ? 'have' : 'has'} a pick too, on the same page.` : '';
       return {
         kind: 'santa', to_email: g.email,
-        subject: 'Your Secret Santa is ready 🎅',
+        subject: 'Your Secret Santa is ready',
         text_body: `The ${s.name} Secret Santa draw is done! Pop into the app and unwrap who you've got. Budget $100. Shh, keep it secret.${kidLine}\n${url}`,
         html: renderEmail({
           siteUrl, side: s, title: 'Your Secret Santa is ready!', subtitle: 'Budget $100',

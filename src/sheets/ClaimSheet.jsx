@@ -34,7 +34,7 @@ export default function ClaimSheet({ open, onClose, recipient, item, claim, onSa
         id: claim?.id, recipient_id: recipient.id, item_id: item?.id ?? claim?.item_id ?? null, claimer_id: me.id,
         description, state, occasion_type: occ, occasion_date: date,
       });
-      toast(state === 'bought' ? 'Locked in for you 🎁' : 'Noted as a maybe');
+      toast(state === 'bought' ? 'Locked in for you' : 'Noted as a maybe');
       onSaved(); onClose();
     } catch (e) { setErr(e.message); }
     setBusy(false);

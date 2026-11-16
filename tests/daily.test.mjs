@@ -109,13 +109,13 @@ test('birthday email lists only ideas still free, at most 3, safely escaped, in 
   assert.ok(toBob.html.includes('Mug &lt;b&gt;&amp; saucer&lt;/b&gt;'), 'titles are escaped');
   assert.ok(toBob.html.indexOf('>i2<') < toBob.html.indexOf('Mug'), 'most wanted first');
   assert.match(toBob.html, /\+ 1 more on ann’s list/i, '4 free ideas: 3 shown + 1 more');
-  assert.ok(toBob.html.includes('#8a3f8f'), 'Side A colour (plum)');
+  assert.ok(toBob.html.includes('#82597e'), 'Side A colour (mauve)');
   assert.match(toBob.text_body, /4 ideas are still up for grabs/);
 });
 
 test('every email shares one layout with the family name, preview line and a working button', () => {
   const html = renderEmail({ siteUrl: 'https://x.test/app', side: { id: 'hb', name: 'Side <B>', accent: 'teal' }, preheader: 'Preview', title: 'Hi', button: { label: 'Go', url: 'https://x.test/app/hb/' } });
-  assert.ok(html.includes('Side &lt;B&gt;') && html.includes('#0b7080') && html.includes('Preview') && html.includes('href="https://x.test/app/hb/"'));
+  assert.ok(html.includes('Side &lt;B&gt;') && html.includes('#27767a') && html.includes('Preview') && html.includes('href="https://x.test/app/hb/"'));
   assert.ok(html.includes('https://x.test/app/icons/icon-192.png'));
 });
 

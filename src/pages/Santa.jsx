@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Avatar, Empty, Spinner } from '../ui.jsx';
+import { Avatar, Empty, Spinner, IconGift } from '../ui.jsx';
 import { useApp } from '../lib/ctx.jsx';
 import { loadSanta, loadDraws } from '../lib/api.js';
 import { todayISO, daysBetween, firstName } from '../lib/dates.js';
@@ -47,7 +47,7 @@ export default function Santa({ go }) {
               <AnimatePresence mode="wait" initial={false}>
                 {!open ? (
                   <motion.div key="closed" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.08, rotate: 4 }} transition={{ type: 'spring', bounce: 0.3, duration: 0.5 }}>
-                    <div style={{ fontSize: '3.5rem' }} aria-hidden="true">🎁</div>
+                    <div style={{ display: 'grid', placeItems: 'center' }} aria-hidden="true"><IconGift size={60} /></div>
                     <p className="big" style={{ marginTop: 8 }}>Tap to unwrap</p>
                     <p style={{ marginTop: 6 }}>Your Secret Santa person for {year}</p>
                   </motion.div>
@@ -55,7 +55,7 @@ export default function Santa({ go }) {
                   <motion.div key="open" initial={{ opacity: 0, scale: 0.7, rotate: -6 }} animate={{ opacity: 1, scale: 1, rotate: 0 }} transition={{ type: 'spring', bounce: 0.4, duration: 0.6 }}>
                     <div style={{ display: 'grid', placeItems: 'center' }}><Avatar person={byId[mine.recipient_id]} size={72} /></div>
                     <p className="big" style={{ marginTop: 12 }}>{byId[mine.recipient_id]?.full_name}</p>
-                    <p style={{ marginTop: 6 }}>Budget $100 · shh, it’s a secret 🤫</p>
+                    <p style={{ marginTop: 6 }}>Budget $100 · shh, it’s a secret</p>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -74,7 +74,7 @@ export default function Santa({ go }) {
           {drawn && !mine && <Empty title="Nothing recorded for you this year">If this year’s draw happened outside the app, that’s expected. The app draws automatically from 1 November next year.</Empty>}
           {!drawn && (
             <div className="card pad" style={{ textAlign: 'center' }}>
-              <p style={{ fontSize: '3rem' }} aria-hidden="true">🎅</p>
+              <div style={{ display: 'grid', placeItems: 'center', color: 'var(--accent)' }} aria-hidden="true"><IconGift size={48} /></div>
               <h2 style={{ marginTop: 8 }}>{daysToDraw > 0 ? `The draw happens in ${daysToDraw} day${daysToDraw > 1 ? 's' : ''}` : 'The draw is coming'}</h2>
               <p className="muted" style={{ marginTop: 6 }}>It runs automatically on 1 November. You’ll get an email, then open the app to see who you’ve got.</p>
             </div>

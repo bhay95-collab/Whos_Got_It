@@ -11,9 +11,10 @@
   --line: #e4d6cd;
   --line-soft: #f0e5de;
   --fill: #f2e8e0;
-  --accent: #b4483a;
-  --accent-hover: #983a2e;
-  --accent-wash: #fbebe6;
+  --accent: #8f594b;
+  --accent-hover: #7c483b;
+  --accent-wash: #feebe6;
+  --accent-ink: #583127;
   --on-accent: #ffffff;
   --success: #18733f;
   --success-wash: #e7f5ec;
@@ -30,8 +31,8 @@
   --radius: 18px;
   --radius-sm: 12px;
   --tab-h: 64px;
-  --gift-from: #b4483a;
-  --gift-to: #7e2c20;
+  --gift-from: #8f594b;
+  --gift-to: #663a2f;
   --on-gift: #ffffff;
 
   --blue-tile: #bcd6ee;   --blue-ink: #1e4f7c;
@@ -52,10 +53,11 @@
     --line: #3f302a;
     --line-soft: #30251f;
     --fill: #33271f;
-    --accent: #ef8c79;
-    --accent-hover: #f6ab9c;
-    --accent-wash: rgba(239, 140, 121, 0.14);
-    --on-accent: #2a0f09;
+    --accent: #e7aea0;
+    --accent-hover: #f5c4b7;
+    --accent-wash: #3b2824;
+    --accent-ink: #e7aea0;
+    --on-accent: #2a130d;
     --success: #4cc27a;
     --success-wash: rgba(76, 194, 122, 0.14);
     --danger: #ff8a96;
@@ -67,8 +69,8 @@
     --shadow-sm: 0 0 0 1px rgba(255, 235, 225, 0.05);
     --shadow-md: 0 0 0 1px rgba(255, 235, 225, 0.06), 0 12px 32px rgba(0, 0, 0, 0.5);
     --shadow-sheet: 0 -8px 40px rgba(0, 0, 0, 0.6);
-    --gift-from: #b4483a;
-    --gift-to: #7e2c20;
+    --gift-from: #885346;
+    --gift-to: #60352a;
     --blue-tile: #1d3a56;   --blue-ink: #a9cdf0;
     --pink-tile: #5a2540;   --pink-ink: #f5b7d1;
     --lilac-tile: #3d3160;  --lilac-ink: #cdbdf5;
@@ -78,20 +80,21 @@
   }
 }
 
-/* ---------- per-family accent (set on <html data-accent=…>). Coral is the brand default. ---------- */
-[data-accent='coral'] { --accent: #b4483a; --accent-hover: #983a2e; --accent-wash: #fbebe6; --gift-from: #b4483a; --gift-to: #7e2c20; }
-[data-accent='teal'] { --accent: #0b7080; --accent-hover: #085a68; --accent-wash: #e6f3f4; --gift-from: #0b7080; --gift-to: #05434d; }
-[data-accent='indigo'] { --accent: #4a58b8; --accent-hover: #3b4797; --accent-wash: #eceefa; --gift-from: #4a58b8; --gift-to: #2a3375; }
-[data-accent='plum'] { --accent: #8a3f8f; --accent-hover: #70317a; --accent-wash: #f6e9f6; --gift-from: #8a3f8f; --gift-to: #522159; }
-[data-accent='forest'] { --accent: #2f7a4b; --accent-hover: #25613b; --accent-wash: #e7f3eb; --gift-from: #2f7a4b; --gift-to: #1a4a2c; }
-[data-accent='honey'] { --accent: #9a6200; --accent-hover: #7d5000; --accent-wash: #fbf0d9; --gift-from: #9a6200; --gift-to: #5e3b00; }
+/* ---------- per-family accent (set on <html data-accent=…>). "Dusty" palette: built in OKLCH so every family
+   has the same lightness and intensity (only the hue changes), all pairs pass WCAG AA. Coral is the brand default. ---------- */
+[data-accent='coral'] { --accent: #8f594b; --accent-hover: #7c483b; --accent-wash: #feebe6; --accent-ink: #583127; --gift-from: #8f594b; --gift-to: #663a2f; }
+[data-accent='teal'] { --accent: #27767a; --accent-hover: #0c6468; --accent-wash: #e0f5f6; --accent-ink: #034649; --gift-from: #27767a; --gift-to: #095255; }
+[data-accent='indigo'] { --accent: #4b6b94; --accent-hover: #3a5a81; --accent-wash: #e7f1ff; --accent-ink: #273e5c; --gift-from: #4b6b94; --gift-to: #2f496a; }
+[data-accent='plum'] { --accent: #82597e; --accent-hover: #70486c; --accent-wash: #f9ebf7; --accent-ink: #4f314c; --gift-from: #82597e; --gift-to: #5b3a58; }
+[data-accent='forest'] { --accent: #487552; --accent-hover: #376441; --accent-wash: #e6f5e8; --accent-ink: #24462c; --gift-from: #487552; --gift-to: #2c5235; }
+[data-accent='honey'] { --accent: #816334; --accent-hover: #6f5222; --accent-wash: #f8efe0; --accent-ink: #4e3914; --gift-from: #816334; --gift-to: #5b431b; }
 @media (prefers-color-scheme: dark) {
-  [data-accent='coral'] { --accent: #ef8c79; --accent-hover: #f6ab9c; --accent-wash: rgba(239, 140, 121, 0.14); --on-accent: #2a0f09; --gift-from: #b4483a; --gift-to: #7e2c20; }
-  [data-accent='teal'] { --accent: #5fc4d1; --accent-hover: #8ad6e0; --accent-wash: rgba(95,196,209, 0.14); --on-accent: #05252a; --gift-from: #0b7080; --gift-to: #05434d; }
-  [data-accent='indigo'] { --accent: #9aa6f0; --accent-hover: #b6bff5; --accent-wash: rgba(154,166,240, 0.14); --on-accent: #0f1440; --gift-from: #4a58b8; --gift-to: #2a3375; }
-  [data-accent='plum'] { --accent: #d79be0; --accent-hover: #e6b6ee; --accent-wash: rgba(215,155,224, 0.14); --on-accent: #2e0f33; --gift-from: #8a3f8f; --gift-to: #522159; }
-  [data-accent='forest'] { --accent: #7fd09b; --accent-hover: #a0dfb5; --accent-wash: rgba(127,208,155, 0.14); --on-accent: #08240f; --gift-from: #2f7a4b; --gift-to: #1a4a2c; }
-  [data-accent='honey'] { --accent: #f0b95a; --accent-hover: #f5cd85; --accent-wash: rgba(240,185,90, 0.14); --on-accent: #2e1d00; --gift-from: #9a6200; --gift-to: #5e3b00; }
+  [data-accent='coral'] { --accent: #e7aea0; --accent-hover: #f5c4b7; --accent-wash: #3b2824; --accent-ink: #e7aea0; --on-accent: #2a130d; --gift-from: #885346; --gift-to: #60352a; }
+  [data-accent='teal'] { --accent: #86cccf; --accent-hover: #a3dde0; --accent-wash: #1b3234; --accent-ink: #86cccf; --on-accent: #002022; --gift-from: #1f7074; --gift-to: #004c50; }
+  [data-accent='indigo'] { --accent: #a0c0eb; --accent-hover: #b7d4f9; --accent-wash: #242f3d; --accent-ink: #a0c0eb; --on-accent: #0d1b2d; --gift-from: #45658d; --gift-to: #2a4464; }
+  [data-accent='plum'] { --accent: #d8aed3; --accent-hover: #e8c3e4; --accent-wash: #372835; --accent-ink: #d8aed3; --on-accent: #251323; --gift-from: #7c5378; --gift-to: #563553; }
+  [data-accent='forest'] { --accent: #9ecba6; --accent-hover: #b6ddbd; --accent-wash: #233226; --accent-ink: #9ecba6; --on-accent: #0b2010; --gift-from: #426f4c; --gift-to: #274c2f; }
+  [data-accent='honey'] { --accent: #d7b98b; --accent-hover: #e7cda5; --accent-wash: #362c1c; --accent-ink: #d7b98b; --on-accent: #251803; --gift-from: #7b5e2e; --gift-to: #553e15; }
 }
 
 /* ---------- base / mobile-native fixes ---------- */

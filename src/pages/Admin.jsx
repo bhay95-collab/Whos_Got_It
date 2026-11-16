@@ -5,7 +5,7 @@ import PersonSheet from '../sheets/PersonSheet.jsx';
 import { useApp } from '../lib/ctx.jsx';
 import { fmtBirthday } from '../lib/dates.js';
 
-const ACCENTS = [['coral', 'Coral'], ['teal', 'Teal'], ['indigo', 'Indigo'], ['plum', 'Plum'], ['forest', 'Forest'], ['honey', 'Honey']];
+const ACCENTS = [['coral', 'Coral'], ['teal', 'Teal'], ['indigo', 'Slate blue'], ['plum', 'Mauve'], ['forest', 'Sage'], ['honey', 'Honey']];
 
 export default function Admin() {
   const { fam, reload, toast } = useApp();
