@@ -15,17 +15,26 @@ export async function run({ store, mailer, now = new Date(), siteUrl, rng = Math
 
   await store.keepAlive();
   await store.archiveGiven();
-  const { people, personSides, sides, itemCounts } = await store.loadAll();
+  const { people, personSides, sides, items, claims, itemCounts } = await store.loadAll();
   const admins = people.filter((p) => p.is_admin && p.active);
 
   // 1) birthday reminders
-  const bday = planBirthdayEmails({ people, personSides, itemCounts, today, siteUrl });
+  const bday = planBirthdayEmails({ people, personSides, sides, items, claims, itemCounts, today, siteUrl });
   summary.queued += await store.queue(bday);
 
   // 2) Secret Santa, per side, once a year
   if (today >= `${year}-${DRAW_FROM}` && today <= `${year}-${DRAW_UNTIL}`) {
     for (const side of sides) {
-      if (await store.drawExists(side.id, year)) continue;
+      // Draw already done: make sure every giver with an email has their "ready" email queued
+      // (picks up people who added an email later; the dedupe key stops repeats).
+      if (await store.drawExists(side.id, year)) {
+        const existing = await store.drawWithGivers?.(side.id, year);
+        if (existing) {
+          const givers = people.filter((p) => existing.giverIds.includes(p.id));
+          summary.queued += await store.queue(planSantaEmails({ draw: existing.draw, side, givers, people, siteUrl }));
+        }
+        continue;
+      }
       const ids = new Set(personSides.filter((s) => s.side_id === side.id).map((s) => s.person_id));
       // santa_kids = false: this family draws adults only (kids stay in the family for everything else)
       const givers = people.filter((p) => ids.has(p.id) && p.active && (side.santa_kids !== false || !p.is_child));
@@ -35,15 +44,15 @@ export async function run({ store, mailer, now = new Date(), siteUrl, rng = Math
         const draw = await store.saveDraw(side.id, year, pairs);
         if (!draw) continue;   // another run got there first
         summary.draws.push({ side: side.id, people: givers.length, relaxedLastYear });
-        summary.queued += await store.queue(planSantaEmails({ draw, sideName: side.name, givers, people, siteUrl }));
+        summary.queued += await store.queue(planSantaEmails({ draw, side, givers, people, siteUrl }));
         const noEmail = givers.filter((g) => !g.is_child && !g.email).map((g) => g.full_name.split(' ')[0]);
         const notes = [];
         if (relaxedLastYear) notes.push('Nobody could avoid last year’s person this time, so the “not last year” rule was relaxed for this draw.');
         if (noEmail.length) notes.push(`These people have no email yet, so they were not notified: ${noEmail.join(', ')}.`);
-        if (notes.length) summary.queued += await store.queue(planAlert({ admins, key: `santa-note:${draw.id}`, subject: `Secret Santa drawn for ${side.name}`, text: notes.join('\n') }));
+        if (notes.length) summary.queued += await store.queue(planAlert({ admins, key: `santa-note:${draw.id}`, subject: `Secret Santa drawn for ${side.name}`, text: notes.join('\n'), siteUrl, side }));
       } catch (e) {
         log(`Draw failed for ${side.id}: ${e.message}`);
-        summary.queued += await store.queue(planAlert({ admins, key: `santa-fail:${side.id}:${year}:${today}`, subject: `Secret Santa draw failed for ${side.name}`, text: `${e.message}\nCheck partners and households under People, then re-run the “Daily job” workflow.` }));
+        summary.queued += await store.queue(planAlert({ admins, key: `santa-fail:${side.id}:${year}:${today}`, subject: `Secret Santa draw failed for ${side.name}`, text: `${e.message}\nCheck partners and households under People, then re-run the “Daily job” workflow.`, siteUrl, side }));
       }
     }
   }

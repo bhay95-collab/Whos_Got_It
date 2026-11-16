@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { run } from '../scripts/daily.mjs';
-import { planBirthdayEmails } from '../scripts/emails.mjs';
+import { planBirthdayEmails, planSantaEmails, renderEmail } from '../scripts/emails.mjs';
 
 const P = (id, o = {}) => ({ id, full_name: `${id} Test`, active: true, is_child: false, is_admin: false, household_id: `h-${id}`, spouse_id: null, email: `${id}@example.com`, birth_month: null, birth_day: null, birth_year: null, ...o });
 const mkData = () => ({
@@ -23,6 +23,11 @@ function fakeStore(data) {
     async loadAll() { return data; },
     async queue(emails) { let n = 0; for (const e of emails) if (!queue.has(e.dedupe_key)) { queue.set(e.dedupe_key, { ...e, id: e.dedupe_key, sent_at: null }); n++; } return n; },
     async drawExists(side, year) { return draws.some((d) => d.side_id === side && d.year === year); },
+    async drawWithGivers(side, year) {
+      const d = draws.find((x) => x.side_id === side && x.year === year);
+      const g = d ? pairs.filter((p) => p.draw_id === d.id).map((p) => p.giver_id) : [];
+      return g.length ? { draw: d, giverIds: g } : null;
+    },
     async history() { return []; },
     async saveDraw(side_id, year, ps) { const d = { id: `d${draws.length}`, side_id, year }; draws.push(d); pairs.push(...ps.map((p) => ({ ...p, draw_id: d.id }))); return d; },
     async pending() { return [...queue.values()].filter((q) => !q.sent_at); },
@@ -89,4 +94,59 @@ test('a family set to adults only leaves children out of its draw', async () => 
   assert.ok(hbPairs.every((p) => p.giver_id !== 'kid2' && p.recipient_id !== 'kid2'), 'kid2 neither gives nor receives');
   const hm = store.draws.find((d) => d.side_id === 'hm');
   assert.ok(store.pairs.some((p) => p.draw_id === hm.id && p.giver_id === 'kid'), 'the other family still includes its kid');
+});
+
+test('birthday email lists only ideas still free, at most 3, safely escaped, in the family colour', () => {
+  const d = mkData();
+  d.sides = [{ id: 'hm', name: 'Side A', accent: 'plum' }, { id: 'hb', name: 'Side B', accent: 'teal' }];
+  const item = (id, o = {}) => ({ id, person_id: 'ann', title: id, url: null, image_url: null, price: null, priority: 0, created_at: '2026-10-01', archived_at: null, ...o });
+  d.items = [item('i1', { title: 'Mug <b>& saucer</b>', price: 45 }), item('i2', { priority: 2 }), item('i3'), item('i4'), item('taken')];
+  d.claims = [{ item_id: 'taken', state: 'bought', occasion_date: '2026-12-20' }, { item_id: 'i3', state: 'thinking', occasion_date: '2026-12-20' }];
+  const mails = planBirthdayEmails({ ...d, today: '2026-11-15', siteUrl: 'https://x.test/app' });
+  const toBob = mails.find((m) => m.to_email === 'bob@example.com' && m.dedupe_key.includes(':ann:'));
+  assert.ok(toBob, 'bob gets a reminder about ann');
+  assert.ok(!toBob.html.includes('>taken<'), 'a bought idea never shows');
+  assert.ok(toBob.html.includes('Mug &lt;b&gt;&amp; saucer&lt;/b&gt;'), 'titles are escaped');
+  assert.ok(toBob.html.indexOf('>i2<') < toBob.html.indexOf('Mug'), 'most wanted first');
+  assert.match(toBob.html, /\+ 1 more on ann’s list/i, '4 free ideas: 3 shown + 1 more');
+  assert.ok(toBob.html.includes('#8a3f8f'), 'Side A colour (plum)');
+  assert.match(toBob.text_body, /4 ideas are still up for grabs/);
+});
+
+test('every email shares one layout with the family name, preview line and a working button', () => {
+  const html = renderEmail({ siteUrl: 'https://x.test/app', side: { id: 'hb', name: 'Side <B>', accent: 'teal' }, preheader: 'Preview', title: 'Hi', button: { label: 'Go', url: 'https://x.test/app/hb/' } });
+  assert.ok(html.includes('Side &lt;B&gt;') && html.includes('#0b7080') && html.includes('Preview') && html.includes('href="https://x.test/app/hb/"'));
+  assert.ok(html.includes('https://x.test/app/icons/icon-192.png'));
+});
+
+test('a draw that already exists gets its "ready" emails queued once, including people who add an email later', async () => {
+  const data = mkData();
+  data.people.push(P('eve'), P('fay', { email: null }));
+  data.personSides.push(...['eve', 'fay'].map((person_id) => ({ person_id, side_id: 'hb' })));
+  const store = fakeStore(data);
+  store.draws.push({ id: 'old', side_id: 'hb', year: 2026 });
+  store.pairs.push(...[['ann', 'dan'], ['dan', 'eve'], ['eve', 'fay'], ['fay', 'ann']].map(([giver_id, recipient_id]) => ({ giver_id, recipient_id, draw_id: 'old' })));
+  const m = mailer();
+  await run({ store, mailer: m, now: NOW('2026-11-16'), siteUrl: 'u', log() {} });
+  const santa = () => m.sent.filter((e) => e.kind === 'santa' && e.dedupe_key.startsWith('santa:old:')).map((e) => e.to_email).sort();
+  assert.deepEqual(santa(), ['ann@example.com', 'dan@example.com', 'eve@example.com'], 'fay has no email yet');
+  assert.ok(!m.sent.some((e) => /Test/.test(e.text_body) && e.kind === 'santa'), 'no names');
+  await run({ store, mailer: m, now: NOW('2026-11-17'), siteUrl: 'u', log() {} });
+  assert.equal(santa().length, 3, 'no repeats');
+  data.people.find((p) => p.id === 'fay').email = 'fay@example.com';
+  await run({ store, mailer: m, now: NOW('2026-11-18'), siteUrl: 'u', log() {} });
+  assert.deepEqual(santa(), ['ann@example.com', 'dan@example.com', 'eve@example.com', 'fay@example.com']);
+});
+
+test('a couple sharing one inbox gets one email, and never a reminder about their own birthday', () => {
+  const d = mkData();
+  d.people.push(P('kei', { email: 'Couple@Example.com', birth_month: 12, birth_day: 20 }), P('lib', { email: 'couple@example.com' }));
+  d.personSides.push({ person_id: 'kei', side_id: 'hm' }, { person_id: 'lib', side_id: 'hm' });
+  const mails = planBirthdayEmails({ ...d, today: '2026-11-15', siteUrl: 'u' });
+  const aboutAnn = mails.filter((m) => m.dedupe_key.startsWith('bday:ann:') && m.to_email.toLowerCase() === 'couple@example.com');
+  assert.equal(aboutAnn.length, 1, 'one reminder about Ann for the shared inbox');
+  const aboutKei = mails.filter((m) => m.dedupe_key.startsWith('bday:kei:'));
+  assert.ok(aboutKei.length > 0 && aboutKei.every((m) => m.to_email.toLowerCase() !== 'couple@example.com'), 'Keith’s inbox never hears about Keith');
+  const santa = planSantaEmails({ draw: { id: 'd', side_id: 'hm' }, side: { id: 'hm', name: 'A' }, givers: d.people, people: d.people, siteUrl: 'u' });
+  assert.equal(santa.filter((m) => m.to_email.toLowerCase() === 'couple@example.com').length, 1, 'one Secret Santa email for the shared inbox');
 });
