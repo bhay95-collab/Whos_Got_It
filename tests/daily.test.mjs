@@ -75,3 +75,18 @@ test('a failed draw emails the admin instead of crashing', async () => {
   await run({ store, mailer: m, now: NOW('2026-11-01'), siteUrl: 'u', log() {} });
   assert.ok(m.sent.some((e) => e.kind === 'alert' && /failed/i.test(e.subject) && e.to_email === 'ann@example.com'));
 });
+
+test('a family set to adults only leaves children out of its draw', async () => {
+  const data = mkData();
+  data.people.push(P('eve'), P('fay'), P('kid2', { is_child: true, email: null, household_id: 'h-dan' }));
+  data.personSides.push(...['eve', 'fay', 'kid2'].map((person_id) => ({ person_id, side_id: 'hb' })));
+  data.sides = [{ id: 'hm', name: 'Side A' }, { id: 'hb', name: 'Side B', santa_kids: false }];
+  const store = fakeStore(data);
+  const s = await run({ store, mailer: mailer(), now: NOW('2026-11-01'), siteUrl: 'u', log() {} });
+  const hb = store.draws.find((d) => d.side_id === 'hb');
+  const hbPairs = store.pairs.filter((p) => p.draw_id === hb.id);
+  assert.equal(s.draws.find((d) => d.side === 'hb').people, 4, 'ann, dan, eve, fay');
+  assert.ok(hbPairs.every((p) => p.giver_id !== 'kid2' && p.recipient_id !== 'kid2'), 'kid2 neither gives nor receives');
+  const hm = store.draws.find((d) => d.side_id === 'hm');
+  assert.ok(store.pairs.some((p) => p.draw_id === hm.id && p.giver_id === 'kid'), 'the other family still includes its kid');
+});

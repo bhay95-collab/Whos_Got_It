@@ -6,7 +6,8 @@ import { loadSanta, loadDraws } from '../lib/api.js';
 import { todayISO, daysBetween, firstName } from '../lib/dates.js';
 
 export default function Santa({ go }) {
-  const { me, side, sideName, sidePeople, byId } = useApp();
+  const { me, side, sideName, sidePeople, byId, fam } = useApp();
+  const kidsDraw = fam.sides.find((s) => s.id === side)?.santa_kids !== false;
   const [pairs, setPairs] = useState(null);
   const [draws, setDraws] = useState([]);
   const [open, setOpen] = useState(false);
@@ -82,7 +83,7 @@ export default function Santa({ go }) {
           <p className="section-title">The rules</p>
           <div className="card pad small muted stack" style={{ gap: 6 }}>
             <span>• Never yourself, never your partner.</span>
-            <span>• Kids never draw someone in their own household.</span>
+            <span>{kidsDraw ? '• Kids never draw someone in their own household.' : '• Adults only in this family’s draw.'}</span>
             <span>• Never the same person as last year.</span>
             <span>• Otherwise whoever you’ve bought for least often, so everyone gets a turn.</span>
           </div>

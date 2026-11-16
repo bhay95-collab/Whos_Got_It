@@ -27,7 +27,8 @@ export async function run({ store, mailer, now = new Date(), siteUrl, rng = Math
     for (const side of sides) {
       if (await store.drawExists(side.id, year)) continue;
       const ids = new Set(personSides.filter((s) => s.side_id === side.id).map((s) => s.person_id));
-      const givers = people.filter((p) => ids.has(p.id) && p.active);
+      // santa_kids = false: this family draws adults only (kids stay in the family for everything else)
+      const givers = people.filter((p) => ids.has(p.id) && p.active && (side.santa_kids !== false || !p.is_child));
       try {
         const history = await store.history(side.id);
         const { pairs, relaxedLastYear } = drawSanta({ people: givers, history, year, rng });
@@ -50,7 +51,7 @@ export async function run({ store, mailer, now = new Date(), siteUrl, rng = Math
   // 3) send everything waiting
   for (const row of await store.pending()) {
     try { await mailer.send(row); await store.markSent(row.id); summary.sent++; }
-    catch (e) { await store.markError(row.id, String(e.message || e)); summary.failed++; log(`Email to ${row.to_email} failed: ${e.message}`); }
+    catch (e) { await store.markError(row.id, String(e.message || e)); summary.failed++; log(`Email ${row.kind || ''} #${row.id} failed: ${e.message}`); }
   }
   log(`Daily job done: ${JSON.stringify(summary)}`);
   return summary;
